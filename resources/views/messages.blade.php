@@ -67,7 +67,7 @@
                             <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-yellow-500 border-2 border-white rounded-full"></div>
                         </div>
                         <div class="ml-3 flex-1">
-                            <p class="font-semibold text-gray-800">Ahmet Yılmaz</p>
+                            <p class="font-semibold text-gray-800">Serhat Atalay EVİŞ</p>
                             <p class="text-gray-600 text-sm">Muhasebe</p>
                             <p class="text-gray-500 text-xs">Fatura onayı bekleniyor</p>
                         </div>
