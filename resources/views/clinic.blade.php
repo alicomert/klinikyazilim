@@ -1,0 +1,511 @@
+@extends('layouts.app')
+
+@section('content')
+<style>
+    .sidebar {
+        transition: all 0.3s;
+    }
+    .sidebar-collapsed {
+        width: 70px;
+    }
+    .sidebar-collapsed .sidebar-text {
+        display: none;
+    }
+    .sidebar-collapsed .logo-text {
+        display: none;
+    }
+    .sidebar-collapsed .menu-item {
+        justify-content: center;
+    }
+    .content-area {
+        transition: all 0.3s;
+    }
+    .content-expanded {
+        margin-left: 70px;
+    }
+    .calendar-day {
+        min-height: 100px;
+    }
+    .calendar-day:hover {
+        background-color: #f3f4f6;
+    }
+    .appointment-slot {
+        transition: all 0.2s;
+    }
+    .appointment-slot:hover {
+        transform: translateY(-2px);
+    }
+    .chart-container {
+        height: 300px;
+    }
+    @media (max-width: 768px) {
+        .sidebar {
+            position: fixed;
+            z-index: 50;
+            transform: translateX(-100%);
+        }
+        .sidebar-open {
+            transform: translateX(0);
+        }
+        .content-area {
+            margin-left: 0 !important;
+        }
+    }
+</style>
+
+<!-- Mobile Menu Button -->
+<button id="mobileMenuButton" class="md:hidden fixed top-4 left-4 z-50 bg-white p-2 rounded-lg shadow-lg">
+    <i class="fas fa-bars text-blue-600"></i>
+</button>
+
+<!-- Sidebar -->
+<div id="sidebar" class="sidebar bg-blue-800 text-white h-screen fixed top-0 left-0 w-64 shadow-lg flex flex-col">
+    <!-- Logo -->
+    <div class="p-4 flex items-center space-x-2 border-b border-blue-700">
+        <div class="bg-white p-2 rounded-lg">
+            <i class="fas fa-hospital text-blue-600 text-xl"></i>
+        </div>
+        <span class="logo-text font-bold text-xl">EstetikLine</span>
+    </div>
+
+    <!-- Doctor Info -->
+    <div class="p-4 flex items-center space-x-3 border-b border-blue-700">
+        <div class="h-12 w-12 rounded-full bg-blue-600 flex items-center justify-center">
+            <i class="fas fa-user-md text-white"></i>
+        </div>
+        <div class="sidebar-text">
+            <div class="font-semibold">Dr. Ahmet Yılmaz</div>
+            <div class="text-xs text-blue-200">Plastik Cerrahi Uzmanı</div>
+        </div>
+    </div>
+
+    <!-- Main Menu -->
+    <nav class="flex-1 overflow-y-auto py-4">
+        <ul>
+            <li>
+                <a href="{{ route('dashboard') }}" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-tachometer-alt w-6 text-center"></i>
+                    <span class="sidebar-text">Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100 bg-blue-700">
+                    <i class="fas fa-calendar-alt w-6 text-center"></i>
+                    <span class="sidebar-text">Randevu Takvimi</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('patients') }}" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-users w-6 text-center"></i>
+                    <span class="sidebar-text">Hasta Kayıtları</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('operations') }}" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-procedures w-6 text-center"></i>
+                    <span class="sidebar-text">Operasyonlar</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-file-invoice-dollar w-6 text-center"></i>
+                    <span class="sidebar-text">Finansal İşlemler</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('settings') }}" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-cog w-6 text-center"></i>
+                    <span class="sidebar-text">Ayarlar</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('doctor-panel') }}" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-user-md w-6 text-center"></i>
+                    <span class="sidebar-text">Doktor Paneli</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-calculator w-6 text-center"></i>
+                    <span class="sidebar-text">Muhasebe</span>
+                </a>
+            </li>
+            <li>
+                <a href="{{ route('messages') }}" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-comments w-6 text-center"></i>
+                    <span class="sidebar-text">Hasta Mesajları</span>
+                    <span class="sidebar-text ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">3</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                    <i class="fas fa-credit-card w-6 text-center"></i>
+                    <span class="sidebar-text">Ödemeler</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Collapse Button -->
+    <div class="p-4 border-t border-blue-700">
+        <button id="sidebarToggle" class="menu-item flex items-center space-x-3 p-2 hover:bg-blue-700 rounded-lg text-blue-100 w-full">
+            <i class="fas fa-chevron-left w-6 text-center"></i>
+            <span class="sidebar-text">Daralt</span>
+        </button>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div id="contentArea" class="content-area min-h-screen ml-64">
+    <!-- Top Bar -->
+    <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-semibold text-gray-800">Randevu Takvimi</h1>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <div class="relative">
+                <button class="p-2 rounded-full hover:bg-gray-100">
+                    <i class="fas fa-bell text-gray-500"></i>
+                    <span class="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+                </button>
+            </div>
+            <div class="relative">
+                <button class="p-2 rounded-full hover:bg-gray-100">
+                    <i class="fas fa-envelope text-gray-500"></i>
+                    <span class="absolute top-0 right-0 h-2 w-2 rounded-full bg-red-500"></span>
+                </button>
+            </div>
+            <div class="border-l pl-4">
+                <div class="flex items-center space-x-2">
+                    <div class="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i class="fas fa-user text-blue-600"></i>
+                    </div>
+                    <span class="text-sm font-medium">Dr. Ahmet Yılmaz</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-6">
+        <!-- Calendar Controls -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                <div class="flex items-center space-x-4 mb-4 md:mb-0">
+                    <button class="p-2 rounded-lg hover:bg-gray-100">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <h2 class="text-lg font-semibold">Ekim 2023</h2>
+                    <button class="p-2 rounded-lg hover:bg-gray-100">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <button class="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                        Bugün
+                    </button>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <select class="border rounded-lg px-3 py-2 text-sm">
+                        <option>Doktor Seçin</option>
+                        <option>Dr. Ahmet Yılmaz</option>
+                        <option>Dr. Ayşe Demir</option>
+                    </select>
+                    <select class="border rounded-lg px-3 py-2 text-sm">
+                        <option>Haftalık Görünüm</option>
+                        <option>Günlük Görünüm</option>
+                        <option>Aylık Görünüm</option>
+                    </select>
+                    <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2">
+                        <i class="fas fa-plus"></i>
+                        <span>Yeni Randevu</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar View -->
+        <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+            <!-- Week Header -->
+            <div class="grid grid-cols-7 border-b">
+                <div class="py-2 text-center font-medium text-gray-500">Pazar</div>
+                <div class="py-2 text-center font-medium text-gray-500">Pazartesi</div>
+                <div class="py-2 text-center font-medium text-gray-500">Salı</div>
+                <div class="py-2 text-center font-medium text-gray-500">Çarşamba</div>
+                <div class="py-2 text-center font-medium text-gray-500">Perşembe</div>
+                <div class="py-2 text-center font-medium text-gray-500">Cuma</div>
+                <div class="py-2 text-center font-medium text-gray-500">Cumartesi</div>
+            </div>
+            
+            <!-- Calendar Grid -->
+            <div class="grid grid-cols-7">
+                <!-- Day 1 -->
+                <div class="calendar-day border-r border-b p-2">
+                    <div class="text-right text-gray-400">1</div>
+                    <div class="mt-2 space-y-2">
+                        <div class="appointment-slot bg-blue-100 text-blue-800 p-2 rounded text-sm">
+                            <div class="font-medium">09:00 - Meltem K.</div>
+                            <div class="text-xs">Burun Estetiği Kontrol</div>
+                        </div>
+                        <div class="appointment-slot bg-green-100 text-green-800 p-2 rounded text-sm">
+                            <div class="font-medium">11:30 - Can B.</div>
+                            <div class="text-xs">İlk Muayene</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Day 2 -->
+                <div class="calendar-day border-r border-b p-2">
+                    <div class="text-right text-gray-400">2</div>
+                </div>
+                
+                <!-- Day 3 -->
+                <div class="calendar-day border-r border-b p-2">
+                    <div class="text-right text-gray-400">3</div>
+                    <div class="mt-2 space-y-2">
+                        <div class="appointment-slot bg-purple-100 text-purple-800 p-2 rounded text-sm">
+                            <div class="font-medium">10:15 - Sema T.</div>
+                            <div class="text-xs">Dudak Dolgusu</div>
+                        </div>
+                        <div class="appointment-slot bg-yellow-100 text-yellow-800 p-2 rounded text-sm">
+                            <div class="font-medium">14:00 - Mehmet S.</div>
+                            <div class="text-xs">Operasyon Öncesi</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Day 4 -->
+                <div class="calendar-day border-r border-b p-2">
+                    <div class="text-right text-gray-400">4</div>
+                    <div class="mt-2 space-y-2">
+                        <div class="appointment-slot bg-red-100 text-red-800 p-2 rounded text-sm">
+                            <div class="font-medium">08:30 - Ayşe K.</div>
+                            <div class="text-xs">Operasyon</div>
+                        </div>
+                        <div class="appointment-slot bg-blue-100 text-blue-800 p-2 rounded text-sm">
+                            <div class="font-medium">13:00 - Deniz A.</div>
+                            <div class="text-xs">Kontrol</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Day 5 -->
+                <div class="calendar-day border-r border-b p-2">
+                    <div class="text-right">5</div>
+                    <div class="mt-2 space-y-2">
+                        <div class="appointment-slot bg-green-100 text-green-800 p-2 rounded text-sm">
+                            <div class="font-medium">10:00 - Eren D.</div>
+                            <div class="text-xs">İlk Muayene</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Day 6 -->
+                <div class="calendar-day border-r border-b p-2">
+                    <div class="text-right">6</div>
+                    <div class="mt-2 space-y-2">
+                        <div class="appointment-slot bg-purple-100 text-purple-800 p-2 rounded text-sm">
+                            <div class="font-medium">09:30 - Zeynep Y.</div>
+                            <div class="text-xs">Botoks</div>
+                        </div>
+                        <div class="appointment-slot bg-yellow-100 text-yellow-800 p-2 rounded text-sm">
+                            <div class="font-medium">11:00 - Cem K.</div>
+                            <div class="text-xs">Kontrol</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Day 7 -->
+                <div class="calendar-day border-b p-2">
+                    <div class="text-right">7</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mt-6">
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-gray-500 text-sm">Bugünkü Randevular</div>
+                        <div class="text-2xl font-bold mt-1">4</div>
+                    </div>
+                    <div class="bg-blue-100 p-3 rounded-full">
+                        <i class="fas fa-calendar-day text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-gray-500 text-sm">Bu Haftaki Operasyonlar</div>
+                        <div class="text-2xl font-bold mt-1">3</div>
+                    </div>
+                    <div class="bg-green-100 p-3 rounded-full">
+                        <i class="fas fa-procedures text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-gray-500 text-sm">Yeni Hastalar</div>
+                        <div class="text-2xl font-bold mt-1">5</div>
+                    </div>
+                    <div class="bg-purple-100 p-3 rounded-full">
+                        <i class="fas fa-user-plus text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg shadow-sm p-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-gray-500 text-sm">Bekleyen Ödemeler</div>
+                        <div class="text-2xl font-bold mt-1">₺8,450</div>
+                    </div>
+                    <div class="bg-yellow-100 p-3 rounded-full">
+                        <i class="fas fa-money-bill-wave text-yellow-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Patients -->
+        <div class="bg-white rounded-lg shadow-sm p-4 mt-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Son Hastalar</h3>
+                <a href="#" class="text-blue-600 text-sm hover:underline">Tümünü Gör</a>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hasta</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Son Görüşme</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prosedür</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Durum</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">Meltem Karaca</div>
+                                        <div class="text-sm text-gray-500">35 yaş</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">02.10.2023</div>
+                                <div class="text-sm text-gray-500">09:00</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">Burun Estetiği</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Kontrol</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <button class="text-blue-600 hover:text-blue-900 mr-3"><i class="fas fa-eye"></i></button>
+                                <button class="text-green-600 hover:text-green-900 mr-3"><i class="fas fa-comment-medical"></i></button>
+                                <button class="text-purple-600 hover:text-purple-900"><i class="fas fa-file-invoice"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">Can Burak</div>
+                                        <div class="text-sm text-gray-500">28 yaş</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">01.10.2023</div>
+                                <div class="text-sm text-gray-500">11:30</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">İlk Muayene</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Beklemede</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <button class="text-blue-600 hover:text-blue-900 mr-3"><i class="fas fa-eye"></i></button>
+                                <button class="text-green-600 hover:text-green-900 mr-3"><i class="fas fa-comment-medical"></i></button>
+                                <button class="text-purple-600 hover:text-purple-900"><i class="fas fa-file-invoice"></i></button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="flex-shrink-0 h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">Sema Tekin</div>
+                                        <div class="text-sm text-gray-500">42 yaş</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">03.10.2023</div>
+                                <div class="text-sm text-gray-500">10:15</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">Dudak Dolgusu</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Tamamlandı</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <button class="text-blue-600 hover:text-blue-900 mr-3"><i class="fas fa-eye"></i></button>
+                                <button class="text-green-600 hover:text-green-900 mr-3"><i class="fas fa-comment-medical"></i></button>
+                                <button class="text-purple-600 hover:text-purple-900"><i class="fas fa-file-invoice"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // Sidebar Toggle
+    const sidebarToggle = document.getElementById('sidebarToggle');
+    const sidebar = document.getElementById('sidebar');
+    const contentArea = document.getElementById('contentArea');
+    const mobileMenuButton = document.getElementById('mobileMenuButton');
+
+    sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('sidebar-collapsed');
+        contentArea.classList.toggle('content-expanded');
+    });
+
+    mobileMenuButton.addEventListener('click', () => {
+        sidebar.classList.toggle('sidebar-open');
+    });
+
+    // Responsive adjustments
+    function handleResize() {
+        if (window.innerWidth < 768) {
+            sidebar.classList.add('sidebar-collapsed');
+            contentArea.classList.add('content-expanded');
+        } else {
+            sidebar.classList.remove('sidebar-collapsed');
+            contentArea.classList.remove('content-expanded');
+        }
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize(); // Initial check
+</script>
+@endsection

@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ayarlar - Plastik Cerrahi Klinik Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .sidebar-collapsed {
+            width: 4rem;
+        }
+        .sidebar-collapsed .sidebar-text {
+            display: none;
+        }
+        .sidebar-collapsed .logo-text {
+            display: none;
+        }
+        .content-expanded {
+            margin-left: 4rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Sidebar -->
+    <div id="sidebar" class="fixed left-0 top-0 h-full w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white shadow-xl transition-all duration-300 z-50">
+        <!-- Logo -->
+        <div class="p-6 border-b border-blue-700">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                    <i class="fas fa-user-md text-blue-800 text-xl"></i>
+                </div>
+                <div class="logo-text">
+                    <h1 class="text-xl font-bold">Dr. Mehmet Yılmaz</h1>
+                    <p class="text-blue-200 text-sm">Plastik Cerrah</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <nav class="mt-6">
+            <ul class="space-y-2 px-4">
+                <li>
+                    <a href="dashboard.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-chart-line w-6 text-center"></i>
+                        <span class="sidebar-text">Dashboard</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="klinik.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-calendar-alt w-6 text-center"></i>
+                        <span class="sidebar-text">Randevu Takvimi</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="hasta-kayitlari.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-users w-6 text-center"></i>
+                        <span class="sidebar-text">Hasta Kayıtları</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="operasyonlar.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-procedures w-6 text-center"></i>
+                        <span class="sidebar-text">Operasyonlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="raporlar.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-chart-bar w-6 text-center"></i>
+                        <span class="sidebar-text">Raporlar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="odemeler.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-credit-card w-6 text-center"></i>
+                        <span class="sidebar-text">Ödemeler</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="doktor-panel.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-user-md w-6 text-center"></i>
+                        <span class="sidebar-text">Doktor Paneli</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="muhasebe-panel.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-calculator w-6 text-center"></i>
+                        <span class="sidebar-text">Muhasebe</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="mesajlasma.html" class="menu-item flex items-center space-x-3 p-3 hover:bg-blue-700 text-blue-100">
+                        <i class="fas fa-comments w-6 text-center"></i>
+                        <span class="sidebar-text">Mesajlaşma</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="ayarlar.html" class="menu-item flex items-center space-x-3 p-3 bg-blue-700 text-white">
+                        <i class="fas fa-cog w-6 text-center"></i>
+                        <span class="sidebar-text">Ayarlar</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="ml-64 transition-all duration-300">
+        <!-- Top Bar -->
+        <div class="bg-white shadow-sm border-b border-gray-200 p-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <button id="sidebar-toggle" class="text-gray-600 hover:text-gray-800">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <h2 class="text-2xl font-bold text-gray-800">Sistem Ayarları</h2>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button onclick="saveAllSettings()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-save mr-2"></i>Tüm Ayarları Kaydet
+                    </button>
+                    <div class="text-sm text-gray-600">
+                        <i class="fas fa-calendar mr-2"></i>
+                        <span id="current-date"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-6">
+            <!-- Ayar Kategorileri -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                <!-- Sol Menü -->
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-lg shadow-sm p-4">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Ayar Kategorileri</h3>
+                        <nav class="space-y-2">
+                            <button onclick="showSettingsTab('profile')" class="settings-tab-btn w-full text-left p-3 rounded-lg hover:bg-gray-50 text-gray-700 bg-blue-50 border-l-4 border-blue-600">
+                                <i class="fas fa-user-circle mr-3"></i>Profil Ayarları
+                            </button>
+                            <button onclick="showSettingsTab('clinic')" class="settings-tab-btn w-full text-left p-3 rounded-lg hover:bg-gray-50 text-gray-700">
+                                <i class="fas fa-clinic-medical mr-3"></i>Klinik Bilgileri
+                            </button>
+                            <button onclick="showSettingsTab('notifications')" class="settings-tab-btn w-full text-left p-3 rounded-lg hover:bg-gray-50 text-gray-700">
+                                <i class="fas fa-bell mr-3"></i>Bildirimler
+                            </button>
+                            <button onclick="showSettingsTab('security')" class="settings-tab-btn w-full text-left p-3 rounded-lg hover:bg-gray-50 text-gray-700">
+                                <i class="fas fa-shield-alt mr-3"></i>Güvenlik
+                            </button>
+                            <button onclick="showSettingsTab('backup')" class="settings-tab-btn w-full text-left p-3 rounded-lg hover:bg-gray-50 text-gray-700">
+                                <i class="fas fa-database mr-3"></i>Yedekleme
+                            </button>
+                            <button onclick="showSettingsTab('system')" class="settings-tab-btn w-full text-left p-3 rounded-lg hover:bg-gray-50 text-gray-700">
+                                <i class="fas fa-cogs mr-3"></i>Sistem
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Sağ İçerik -->
+                <div class="lg:col-span-3">
+                    <!-- Profil Ayarları -->
+                    <div id="profile-settings" class="settings-content bg-white rounded-lg shadow-sm p-6">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6">Profil Ayarları</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- Profil Fotoğrafı -->
+                            <div class="flex items-center space-x-6">
+                                <div class="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user-md text-blue-600 text-3xl"></i>
+                                </div>
+                                <div>
+                                    <h4 class="text-lg font-medium text-gray-800">Profil Fotoğrafı</h4>
+                                    <p class="text-gray-600 text-sm mb-3">JPG, PNG formatında maksimum 2MB</p>
+                                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 text-sm">
+                                        <i class="fas fa-upload mr-2"></i>Fotoğraf Yükle
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Kişisel Bilgiler -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Ad Soyad</label>
+                                    <input type="text" value="Dr. Mehmet Yılmaz" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Uzmanlık</label>
+                                    <input type="text" value="Plastik Cerrah" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
+                                    <input type="email" value="dr.mehmet@klinik.com" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
+                                    <input type="tel" value="+90 532 123 4567" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Diploma No</label>
+                                    <input type="text" value="12345" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Mezuniyet Yılı</label>
+                                    <input type="number" value="2010" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                            </div>
+
+                            <!-- Biyografi -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Biyografi</label>
+                                <textarea rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2" placeholder="Kısa biyografi...">15 yıllık deneyime sahip plastik cerrah. Estetik ve rekonstrüktif cerrahi alanında uzman.</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Klinik Bilgileri -->
+                    <div id="clinic-settings" class="settings-content bg-white rounded-lg shadow-sm p-6 hidden">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6">Klinik Bilgileri</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Klinik Adı</label>
+                                    <input type="text" value="Estetik Plastik Cerrahi Kliniği" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Vergi No</label>
+                                    <input type="text" value="1234567890" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
+                                    <input type="tel" value="+90 212 123 4567" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">E-posta</label>
+                                    <input type="email" value="info@klinik.com" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Adres</label>
+                                <textarea rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2">Nişantaşı Mahallesi, Teşvikiye Caddesi No:123, Şişli/İstanbul</textarea>
+                            </div>
+
+                            <!-- Çalışma Saatleri -->
+                            <div>
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">Çalışma Saatleri</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                            <span class="font-medium">Pazartesi</span>
+                                            <div class="flex items-center space-x-2">
+                                                <input type="time" value="09:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                                <span>-</span>
+                                                <input type="time" value="18:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                            <span class="font-medium">Salı</span>
+                                            <div class="flex items-center space-x-2">
+                                                <input type="time" value="09:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                                <span>-</span>
+                                                <input type="time" value="18:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                            <span class="font-medium">Çarşamba</span>
+                                            <div class="flex items-center space-x-2">
+                                                <input type="time" value="09:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                                <span>-</span>
+                                                <input type="time" value="18:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                            <span class="font-medium">Perşembe</span>
+                                            <div class="flex items-center space-x-2">
+                                                <input type="time" value="09:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                                <span>-</span>
+                                                <input type="time" value="18:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                                            <span class="font-medium">Cuma</span>
+                                            <div class="flex items-center space-x-2">
+                                                <input type="time" value="09:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                                <span>-</span>
+                                                <input type="time" value="18:00" class="border border-gray-300 rounded px-2 py-1 text-sm">
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg bg-gray-50">
+                                            <span class="font-medium text-gray-500">Cumartesi</span>
+                                            <span class="text-gray-500 text-sm">Kapalı</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bildirimler -->
+                    <div id="notifications-settings" class="settings-content bg-white rounded-lg shadow-sm p-6 hidden">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6">Bildirim Ayarları</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- E-posta Bildirimleri -->
+                            <div>
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">E-posta Bildirimleri</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                        <div>
+                                            <h5 class="font-medium text-gray-800">Yeni Randevu</h5>
+                                            <p class="text-sm text-gray-600">Yeni randevu alındığında bildirim al</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" checked class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                        <div>
+                                            <h5 class="font-medium text-gray-800">Randevu İptali</h5>
+                                            <p class="text-sm text-gray-600">Randevu iptal edildiğinde bildirim al</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" checked class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                        <div>
+                                            <h5 class="font-medium text-gray-800">Ödeme Bildirimleri</h5>
+                                            <p class="text-sm text-gray-600">Ödeme alındığında bildirim al</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- SMS Bildirimleri -->
+                            <div>
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">SMS Bildirimleri</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                        <div>
+                                            <h5 class="font-medium text-gray-800">Randevu Hatırlatması</h5>
+                                            <p class="text-sm text-gray-600">Randevu öncesi SMS hatırlatması gönder</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" checked class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                    <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                                        <div>
+                                            <h5 class="font-medium text-gray-800">Ödeme Hatırlatması</h5>
+                                            <p class="text-sm text-gray-600">Ödeme vadesi yaklaştığında SMS gönder</p>
+                                        </div>
+                                        <label class="relative inline-flex items-center cursor-pointer">
+                                            <input type="checkbox" class="sr-only peer">
+                                            <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Güvenlik -->
+                    <div id="security-settings" class="settings-content bg-white rounded-lg shadow-sm p-6 hidden">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6">Güvenlik Ayarları</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- Şifre Değiştirme -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">Şifre Değiştir</h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Mevcut Şifre</label>
+                                        <input type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Yeni Şifre</label>
+                                        <input type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Yeni Şifre (Tekrar)</label>
+                                        <input type="password" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    </div>
+                                    <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                                        <i class="fas fa-key mr-2"></i>Şifreyi Güncelle
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- İki Faktörlü Doğrulama -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h4 class="text-lg font-medium text-gray-800">İki Faktörlü Doğrulama</h4>
+                                        <p class="text-sm text-gray-600">Hesabınızı daha güvenli hale getirin</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                <p class="text-sm text-gray-600">SMS veya authenticator uygulaması ile giriş güvenliğinizi artırın.</p>
+                            </div>
+
+                            <!-- Oturum Geçmişi -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">Son Oturum Açma İşlemleri</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-desktop text-green-600"></i>
+                                            <div>
+                                                <p class="font-medium text-gray-800">Windows PC</p>
+                                                <p class="text-sm text-gray-600">İstanbul, Türkiye</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm font-medium text-gray-800">Şu an aktif</p>
+                                            <p class="text-xs text-gray-500">15.12.2023 14:30</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-mobile-alt text-blue-600"></i>
+                                            <div>
+                                                <p class="font-medium text-gray-800">iPhone</p>
+                                                <p class="text-sm text-gray-600">İstanbul, Türkiye</p>
+                                            </div>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-sm text-gray-600">14.12.2023 09:15</p>
+                                            <button class="text-xs text-red-600 hover:text-red-800">Oturumu Sonlandır</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Yedekleme -->
+                    <div id="backup-settings" class="settings-content bg-white rounded-lg shadow-sm p-6 hidden">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6">Yedekleme Ayarları</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- Otomatik Yedekleme -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h4 class="text-lg font-medium text-gray-800">Otomatik Yedekleme</h4>
+                                        <p class="text-sm text-gray-600">Verilerinizi düzenli olarak yedekleyin</p>
+                                    </div>
+                                    <label class="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked class="sr-only peer">
+                                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                    </label>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Yedekleme Sıklığı</label>
+                                        <select class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                            <option value="daily">Günlük</option>
+                                            <option value="weekly" selected>Haftalık</option>
+                                            <option value="monthly">Aylık</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Yedekleme Saati</label>
+                                        <input type="time" value="02:00" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Manuel Yedekleme -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">Manuel Yedekleme</h4>
+                                <p class="text-sm text-gray-600 mb-4">Şimdi tüm verilerinizi yedekleyin</p>
+                                <button onclick="createBackup()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                    <i class="fas fa-download mr-2"></i>Yedek Oluştur
+                                </button>
+                            </div>
+
+                            <!-- Yedek Geçmişi -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">Yedek Geçmişi</h4>
+                                <div class="space-y-3">
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-file-archive text-blue-600"></i>
+                                            <div>
+                                                <p class="font-medium text-gray-800">backup_15122023.zip</p>
+                                                <p class="text-sm text-gray-600">2.3 MB</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm text-gray-600">15.12.2023</span>
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div class="flex items-center space-x-3">
+                                            <i class="fas fa-file-archive text-blue-600"></i>
+                                            <div>
+                                                <p class="font-medium text-gray-800">backup_08122023.zip</p>
+                                                <p class="text-sm text-gray-600">2.1 MB</p>
+                                            </div>
+                                        </div>
+                                        <div class="flex items-center space-x-2">
+                                            <span class="text-sm text-gray-600">08.12.2023</span>
+                                            <button class="text-blue-600 hover:text-blue-800">
+                                                <i class="fas fa-download"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sistem -->
+                    <div id="system-settings" class="settings-content bg-white rounded-lg shadow-sm p-6 hidden">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-6">Sistem Ayarları</h3>
+                        
+                        <div class="space-y-6">
+                            <!-- Genel Ayarlar -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">Genel Ayarlar</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Dil</label>
+                                        <select class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                            <option value="tr" selected>Türkçe</option>
+                                            <option value="en">English</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Zaman Dilimi</label>
+                                        <select class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                            <option value="Europe/Istanbul" selected>İstanbul (UTC+3)</option>
+                                            <option value="Europe/London">Londra (UTC+0)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Para Birimi</label>
+                                        <select class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                            <option value="TRY" selected>Türk Lirası (₺)</option>
+                                            <option value="USD">Amerikan Doları ($)</option>
+                                            <option value="EUR">Euro (€)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Tarih Formatı</label>
+                                        <select class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                                            <option value="DD.MM.YYYY" selected>GG.AA.YYYY</option>
+                                            <option value="MM/DD/YYYY">AA/GG/YYYY</option>
+                                            <option value="YYYY-MM-DD">YYYY-AA-GG</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sistem Bilgileri -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">Sistem Bilgileri</h4>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Sistem Versiyonu:</span>
+                                            <span class="font-medium">v2.1.0</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Son Güncelleme:</span>
+                                            <span class="font-medium">15.12.2023</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Veritabanı Boyutu:</span>
+                                            <span class="font-medium">45.2 MB</span>
+                                        </div>
+                                    </div>
+                                    <div class="space-y-3">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Toplam Hasta:</span>
+                                            <span class="font-medium">1,247</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Toplam Operasyon:</span>
+                                            <span class="font-medium">856</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-600">Aktif Randevular:</span>
+                                            <span class="font-medium">23</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Sistem Bakımı -->
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">Sistem Bakımı</h4>
+                                <div class="space-y-3">
+                                    <button onclick="clearCache()" class="w-full md:w-auto bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 mr-2">
+                                        <i class="fas fa-broom mr-2"></i>Önbelleği Temizle
+                                    </button>
+                                    <button onclick="optimizeDatabase()" class="w-full md:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 mr-2">
+                                        <i class="fas fa-database mr-2"></i>Veritabanını Optimize Et
+                                    </button>
+                                    <button onclick="checkUpdates()" class="w-full md:w-auto bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                        <i class="fas fa-sync-alt mr-2"></i>Güncellemeleri Kontrol Et
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu Button -->
+    <button id="mobile-menu-btn" class="fixed top-4 left-4 z-50 md:hidden bg-blue-600 text-white p-3 rounded-lg shadow-lg">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <script>
+        // Sidebar toggle functionality
+        const sidebar = document.getElementById('sidebar');
+        const mainContent = document.getElementById('main-content');
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+
+        function toggleSidebar() {
+            sidebar.classList.toggle('sidebar-collapsed');
+            mainContent.classList.toggle('content-expanded');
+        }
+
+        sidebarToggle.addEventListener('click', toggleSidebar);
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+
+        // Set current date
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('tr-TR');
+
+        // Settings tab functionality
+        function showSettingsTab(tabName) {
+            // Hide all content sections
+            const contents = document.querySelectorAll('.settings-content');
+            contents.forEach(content => content.classList.add('hidden'));
+            
+            // Show selected content
+            document.getElementById(tabName + '-settings').classList.remove('hidden');
+            
+            // Update tab buttons
+            const buttons = document.querySelectorAll('.settings-tab-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-blue-50', 'border-l-4', 'border-blue-600');
+            });
+            
+            // Highlight active button
+            event.target.classList.add('bg-blue-50', 'border-l-4', 'border-blue-600');
+        }
+
+        // Settings functions
+        function saveAllSettings() {
+            alert('Tüm ayarlar başarıyla kaydedildi!');
+        }
+
+        function createBackup() {
+            alert('Yedekleme işlemi başlatıldı. İşlem tamamlandığında bilgilendirileceksiniz.');
+        }
+
+        function clearCache() {
+            alert('Önbellek temizlendi!');
+        }
+
+        function optimizeDatabase() {
+            alert('Veritabanı optimizasyonu başlatıldı.');
+        }
+
+        function checkUpdates() {
+            alert('Güncellemeler kontrol ediliyor...');
+        }
+    </script>
+</body>
+</html>

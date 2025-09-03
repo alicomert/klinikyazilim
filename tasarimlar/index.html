@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plastik, Rekonstrüktif ve Estetik Cerrahi Yönetim Sistemi</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #6b46c1 0%, #4299e1 100%);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .dashboard-preview {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+        .nav-link {
+            position: relative;
+        }
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: white;
+            transition: width 0.3s ease;
+        }
+        .nav-link:hover:after {
+            width: 100%;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased text-gray-800">
+    <!-- Navigation -->
+    <nav class="gradient-bg text-white shadow-lg">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <div class="mr-10">
+                        <a href="#" class="text-2xl font-bold flex items-center">
+                            <i class="fas fa-heartbeat mr-2"></i>
+                            <span>PRECIS</span>
+                        </a>
+                        <span class="text-xs block">Plastik & Rekonstrüktif Cerrahi İşletim Sistemi</span>
+                    </div>
+                    <div class="hidden md:flex space-x-8">
+                        <a href="#features" class="nav-link">Özellikler</a>
+                        <a href="#screens" class="nav-link">Ekranlar</a>
+                        <a href="#testimonials" class="nav-link">Referanslar</a>
+                        <a href="#contact" class="nav-link">İletişim</a>
+                    </div>
+                </div>
+                <div>
+                    <a href="#demo" class="bg-white text-indigo-700 px-6 py-2 rounded-full font-semibold hover:bg-gray-100 transition duration-300">
+                        Demo Talep Et
+                    </a>
+                </div>
+                <button class="md:hidden focus:outline-none">
+                    <i class="fas fa-bars text-2xl"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="gradient-bg text-white py-20">
+        <div class="container mx-auto px-6 flex flex-col md:flex-row items-center">
+            <div class="md:w-1/2 mb-10 md:mb-0">
+                <h1 class="text-4xl md:text-5xl font-bold leading-tight mb-6">
+                    Plastik Cerrahi Klinik Yönetiminde <span class="text-yellow-300">Yeni Nesil Çözüm</span>
+                </h1>
+                <p class="text-xl mb-8">
+                    PRECIS ile hasta yönetiminden operasyon takibine, randevu planlamadan detaylı raporlamaya kadar tüm klinik süreçlerinizi tek platformda yönetin.
+                </p>
+                <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <a href="#demo" class="bg-yellow-400 text-indigo-900 px-8 py-3 rounded-full font-bold text-center hover:bg-yellow-300 transition duration-300">
+                        Ücretsiz Deneme Başlat
+                    </a>
+                    <a href="#features" class="border-2 border-white px-8 py-3 rounded-full font-bold text-center hover:bg-white hover:text-indigo-700 transition duration-300">
+                        Özellikleri Keşfet
+                    </a>
+                </div>
+            </div>
+            <div class="md:w-1/2 flex justify-center">
+                <div class="dashboard-preview w-full max-w-md">
+                    <img src="https://images.unsplash.com/photo-1581094794329-c811e6ba6a1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Dashboard Preview" class="w-full h-auto">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Öne Çıkan Özellikler</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    PRECIS ile klinik yönetiminizi kolaylaştıran güçlü araçlar
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Feature 1 -->
+                <div class="bg-white p-8 rounded-xl shadow-md feature-card transition duration-300">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-user-injured text-indigo-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Kapsamlı Hasta Yönetimi</h3>
+                    <p class="text-gray-600">
+                        Tüm hasta bilgilerini tek panelden görme, düzenleme ve takip etme imkânı. İletişim bilgileri, geçmiş randevular, yapılan prosedürler ve hasta durumu kolayca ulaşılabilir.
+                    </p>
+                </div>
+                
+                <!-- Feature 2 -->
+                <div class="bg-white p-8 rounded-xl shadow-md feature-card transition duration-300">
+                    <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-procedures text-blue-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Gelişmiş Operasyon Modülü</h3>
+                    <p class="text-gray-600">
+                        Operasyon planlama ve takip süreci son derece pratik. Cerrahi süreçler için özel hazırlanmış detaylı operasyon raporları ile süreçleri kolayca yönetin.
+                    </p>
+                </div>
+                
+                <!-- Feature 3 -->
+                <div class="bg-white p-8 rounded-xl shadow-md feature-card transition duration-300">
+                    <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-calendar-check text-green-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Akıllı Randevu Planlama</h3>
+                    <p class="text-gray-600">
+                        Konsültasyon, kontrol ve operasyon randevuları düzenli bir takvim üzerinde. Esnek planlama ve hızlı güncelleme seçenekleri sayesinde zaman kaybı yok.
+                    </p>
+                </div>
+                
+                <!-- Feature 4 -->
+                <div class="bg-white p-8 rounded-xl shadow-md feature-card transition duration-300">
+                    <div class="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-clinic-medical text-purple-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Anlık Klinik Görünümü</h3>
+                    <p class="text-gray-600">
+                        Günlük hasta listesi, randevu durumları ve operasyon programları tek bakışta görülebilir. Beklemede olan, devam eden veya tamamlanan işlemler net şekilde ayrılmıştır.
+                    </p>
+                </div>
+                
+                <!-- Feature 5 -->
+                <div class="bg-white p-8 rounded-xl shadow-md feature-card transition duration-300">
+                    <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-chart-bar text-red-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Detaylı Raporlama & Analiz</h3>
+                    <p class="text-gray-600">
+                        Klinik performansını gösteren profesyonel raporlar. Hasta bazlı, operasyon bazlı veya genel performans raporlarıyla güçlü analiz imkânı.
+                    </p>
+                </div>
+                
+                <!-- Feature 6 -->
+                <div class="bg-white p-8 rounded-xl shadow-md feature-card transition duration-300">
+                    <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-6">
+                        <i class="fas fa-bolt text-yellow-600 text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Hızlı İşlemler Menüsü</h3>
+                    <p class="text-gray-600">
+                        Yeni hasta kaydı oluşturma, randevu ve operasyon planlama, hasta dosyalarına tek tıkla erişim ve sekreter ile hızlı mesajlaşma özelliği ile zaman kazanın.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Preview -->
+    <section id="screens" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Kullanıcı Dostu Arayüzler</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    Doktor ve sekreterler için özel tasarlanmış pratik arayüzler
+                </p>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row items-center justify-between">
+                <div class="lg:w-1/2 mb-10 lg:mb-0 lg:pr-10">
+                    <h3 class="text-2xl font-bold mb-4">Doktor Paneli</h3>
+                    <p class="text-gray-600 mb-6">
+                        Günlük programı, hızlı işlemleri ve raporları tek ekrandan yönetebilme. Klinik akışını kolaylaştıran pratik ve kullanıcı dostu tasarım ile verimliliğinizi artırın.
+                    </p>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Anlık hasta durum takibi</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Operasyon planlama ve takip</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Hasta dosyalarına hızlı erişim</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Detaylı raporlama araçları</span>
+                        </li>
+                    </ul>
+                </div>
+                <div class="lg:w-1/2">
+                    <div class="dashboard-preview">
+                        <img src="https://images.unsplash.com/photo-1581094794329-c811e6ba6a1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Doctor Dashboard" class="w-full h-auto">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row items-center justify-between mt-20">
+                <div class="lg:w-1/2 order-2 lg:order-1">
+                    <div class="dashboard-preview">
+                        <img src="https://images.unsplash.com/photo-1581094794329-c811e6ba6a1d?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Secretary Dashboard" class="w-full h-auto">
+                    </div>
+                </div>
+                <div class="lg:w-1/2 mb-10 lg:mb-0 lg:pl-10 order-1 lg:order-2">
+                    <h3 class="text-2xl font-bold mb-4">Sekreter Paneli</h3>
+                    <p class="text-gray-600 mb-6">
+                        Randevu yönetimi, hasta kayıt işlemleri ve doktor iletişimi için optimize edilmiş sekreter arayüzü ile klinik işleyişinizi kolaylaştırın.
+                    </p>
+                    <ul class="space-y-3">
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Akıllı randevu planlama</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Hasta kayıt ve bilgi güncelleme</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Doktor ile anlık mesajlaşma</span>
+                        </li>
+                        <li class="flex items-start">
+                            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+                            <span>Operasyon takvimi yönetimi</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials" class="py-20 bg-gray-50">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Kullanıcı Yorumları</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    PRECIS kullanan plastik cerrahlarının deneyimleri
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Testimonial 1 -->
+                <div class="bg-white p-8 rounded-xl shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center mr-4">
+                            <i class="fas fa-user-md text-indigo-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Dr. Ahmet Yılmaz</h4>
+                            <p class="text-gray-600 text-sm">Plastik Cerrah</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        "PRECIS sayesinde klinik yönetimim tamamen değişti. Hasta takibi ve operasyon planlaması artık çok daha kolay. Zaman kazanıp hastalarıma daha fazla vakit ayırabiliyorum."
+                    </p>
+                    <div class="mt-4 text-yellow-400">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                
+                <!-- Testimonial 2 -->
+                <div class="bg-white p-8 rounded-xl shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                            <i class="fas fa-user-nurse text-blue-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Ayşe Demir</h4>
+                            <p class="text-gray-600 text-sm">Klinik Sekreteri</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        "Sekreter paneli sayesinde randevu yönetimi çok kolaylaştı. Doktorlarla anlık mesajlaşma özelliği ile iletişim sorunları ortadan kalktı. Kesinlikle tavsiye ederim."
+                    </p>
+                    <div class="mt-4 text-yellow-400">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                    </div>
+                </div>
+                
+                <!-- Testimonial 3 -->
+                <div class="bg-white p-8 rounded-xl shadow-md">
+                    <div class="flex items-center mb-4">
+                        <div class="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mr-4">
+                            <i class="fas fa-user-md text-purple-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold">Dr. Mehmet Kaya</h4>
+                            <p class="text-gray-600 text-sm">Estetik Cerrah</p>
+                        </div>
+                    </div>
+                    <p class="text-gray-600">
+                        "Operasyon modülü ve detaylı raporlama özellikleri benim için çok önemli. PRECIS ile tüm operasyon süreçlerimi daha profesyonel yönetebiliyorum. Klinik verimliliğim %40 arttı."
+                    </p>
+                    <div class="mt-4 text-yellow-400">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section id="demo" class="py-20 gradient-bg text-white">
+        <div class="container mx-auto px-6 text-center">
+            <h2 class="text-3xl md:text-4xl font-bold mb-6">PRECIS'i Ücretsiz Deneyin</h2>
+            <p class="text-xl mb-8 max-w-2xl mx-auto">
+                Plastik cerrahi klinik yönetiminizi bir üst seviyeye taşımak için şimdi demo talep edin.
+            </p>
+            <form class="max-w-md mx-auto">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <input type="email" placeholder="E-posta adresiniz" class="flex-grow px-4 py-3 rounded-full text-gray-800 focus:outline-none">
+                    <button type="submit" class="bg-yellow-400 text-indigo-900 px-6 py-3 rounded-full font-bold hover:bg-yellow-300 transition duration-300">
+                        Demo Talep Et
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-20 bg-white">
+        <div class="container mx-auto px-6">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Bize Ulaşın</h2>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    PRECIS hakkında detaylı bilgi almak için iletişime geçin
+                </p>
+            </div>
+            
+            <div class="flex flex-col lg:flex-row">
+                <div class="lg:w-1/2 mb-10 lg:mb-0 lg:pr-10">
+                    <div class="bg-gray-50 p-8 rounded-xl">
+                        <h3 class="text-2xl font-bold mb-6">İletişim Bilgileri</h3>
+                        
+                        <div class="space-y-6">
+                            <div class="flex items-start">
+                                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-map-marker-alt text-indigo-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">Adres</h4>
+                                    <p class="text-gray-600">Plastik Cerrahi Teknoloji Plaza, No:123, İstanbul</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-phone-alt text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">Telefon</h4>
+                                    <p class="text-gray-600">+90 212 123 45 67</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-start">
+                                <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                    <i class="fas fa-envelope text-green-600"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold">E-posta</h4>
+                                    <p class="text-gray-600">info@precis.com.tr</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-8">
+                            <h4 class="font-bold mb-4">Sosyal Medya</h4>
+                            <div class="flex space-x-4">
+                                <a href="#" class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-indigo-600 hover:text-white transition duration-300">
+                                    <i class="fab fa-facebook-f"></i>
+                                </a>
+                                <a href="#" class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-blue-400 hover:text-white transition duration-300">
+                                    <i class="fab fa-twitter"></i>
+                                </a>
+                                <a href="#" class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-pink-600 hover:text-white transition duration-300">
+                                    <i class="fab fa-instagram"></i>
+                                </a>
+                                <a href="#" class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center hover:bg-blue-700 hover:text-white transition duration-300">
+                                    <i class="fab fa-linkedin-in"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="lg:w-1/2">
+                    <form class="bg-gray-50 p-8 rounded-xl">
+                        <h3 class="text-2xl font-bold mb-6">Mesaj Gönderin</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label for="name" class="block font-medium mb-1">Adınız</label>
+                                <input type="text" id="name" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            
+                            <div>
+                                <label for="email" class="block font-medium mb-1">E-posta</label>
+                                <input type="email" id="email" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            
+                            <div>
+                                <label for="subject" class="block font-medium mb-1">Konu</label>
+                                <input type="text" id="subject" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            </div>
+                            
+                            <div>
+                                <label for="message" class="block font-medium mb-1">Mesajınız</label>
+                                <textarea id="message" rows="4" class="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"></textarea>
+                            </div>
+                            
+                            <button type="submit" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-indigo-700 transition duration-300">
+                                Mesaj Gönder
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12">
+        <div class="container mx-auto px-6">
+            <div class="flex flex-col md:flex-row justify-between">
+                <div class="mb-8 md:mb-0">
+                    <a href="#" class="text-2xl font-bold flex items-center mb-4">
+                        <i class="fas fa-heartbeat mr-2"></i>
+                        <span>PRECIS</span>
+                    </a>
+                    <p class="text-gray-400 max-w-xs">
+                        Plastik, Rekonstrüktif ve Estetik Cerrahi Yönetim Sistemi
+                    </p>
+                </div>
+                
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-8">
+                    <div>
+                        <h4 class="font-bold text-lg mb-4">Hızlı Linkler</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Anasayfa</a></li>
+                            <li><a href="#features" class="text-gray-400 hover:text-white transition duration-300">Özellikler</a></li>
+                            <li><a href="#screens" class="text-gray-400 hover:text-white transition duration-300">Ekranlar</a></li>
+                            <li><a href="#testimonials" class="text-gray-400 hover:text-white transition duration-300">Referanslar</a></li>
+                            <li><a href="#contact" class="text-gray-400 hover:text-white transition duration-300">İletişim</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-lg mb-4">Ürün</h4>
+                        <ul class="space-y-2">
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Fiyatlandırma</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Demo Talep</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">SSS</a></li>
+                            <li><a href="#" class="text-gray-400 hover:text-white transition duration-300">Gizlilik Politikası</a></li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-bold text-lg mb-4">İletişim</h4>
+                        <ul class="space-y-2">
+                            <li class="text-gray-400">info@precis.com.tr</li>
+                            <li class="text-gray-400">+90 212 123 45 67</li>
+                            <li class="text-gray-400">İstanbul, Türkiye</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
+                <p class="text-gray-400 mb-4 md:mb-0">
+                    © 2023 PRECIS. Tüm hakları saklıdır.
+                </p>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                        <i class="fab fa-facebook-f"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white transition duration-300">
+                        <i class="fab fa-linkedin-in"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const mobileMenuButton = document.querySelector('button[class*="md:hidden"]');
+            const mobileMenu = document.querySelector('.hidden.md\\:flex');
+            
+            mobileMenuButton.addEventListener('click', function() {
+                mobileMenu.classList.toggle('hidden');
+                mobileMenu.classList.toggle('flex');
+                mobileMenu.classList.toggle('flex-col');
+                mobileMenu.classList.toggle('absolute');
+                mobileMenu.classList.toggle('top-16');
+                mobileMenu.classList.toggle('left-0');
+                mobileMenu.classList.toggle('right-0');
+                mobileMenu.classList.toggle('bg-indigo-700');
+                mobileMenu.classList.toggle('p-4');
+                mobileMenu.classList.toggle('space-y-4');
+                mobileMenu.classList.toggle('space-x-8');
+                mobileMenu.classList.toggle('shadow-lg');
+            });
+            
+            // Smooth scrolling for anchor links
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    
+                    // Close mobile menu if open
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenuButton.click();
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
