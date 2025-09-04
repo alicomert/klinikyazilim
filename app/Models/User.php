@@ -61,6 +61,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Check if user is an admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
      * Check if user is a doctor
      */
     public function isDoctor(): bool
@@ -90,6 +98,7 @@ class User extends Authenticatable
     public function getRoleDisplayName(): string
     {
         return match($this->role) {
+            'admin' => 'Admin',
             'doctor' => 'Doktor',
             'nurse' => 'Hemşire',
             'secretary' => 'Sekreter',

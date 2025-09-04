@@ -1,120 +1,459 @@
-# Klinik Yazılım Proje Kuralları
+# Genel Sistem Kuralları - Livewire CRUD İşlemleri
 
-## 1. Framework Versiyonu ve Bağımlılıklar
+## 1. Livewire Component Yapısı
 
-### Laravel 12 Gereksinimleri
-- **Laravel Framework**: ^12.0 (Şubat 2025 sürümü)
-- **PHP Minimum Versiyonu**: 8.2 - 8.4
-- **Composer Bağımlılıkları**:
-  - `laravel/framework: ^12.0`
-  - `phpunit/phpunit: ^11.0`
-  - `pestphp/pest: ^3.0`
-
-### Frontend Teknolojileri
-- **CSS Framework**: Tailwind CSS (en son stabil versiyon)
-- **JavaScript Framework**: Alpine.js v3.14.9 (CDN üzerinden)
-- **Alpine.js CDN**: `https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js`
-- **Tailwind CSS**: PostCSS ile entegre edilmiş olarak kullanılacak
-
-### Starter Kit Seçimi
-- Laravel 12'nin yeni Livewire starter kit'i kullanılacak
-- Flux UI component library ile Tailwind entegrasyonu
-- Laravel Volt desteği aktif olacak
-
-## 2. Test Framework Detayları
-
-### Test Araçları
-- **Unit Testing**: PHPUnit 11.0+
-- **Feature Testing**: Laravel'in built-in test suite
-- **Browser Testing**: Laravel Dusk (gerektiğinde)
-- **API Testing**: Pest 3.0+ ile API endpoint testleri
-
-### Test Standartları
-- Her yeni özellik için mutlaka test yazılacak
-- Test coverage minimum %80 olacak
-- Feature testleri database transactions kullanacak
-- Mock'lar sadece external API'lar için kullanılacak
-
-## 3. Kaçınılması Gereken API'lar ve Uygulamalar
-
-### Yasaklı Laravel Özellikleri
-- **Log Sistemi**: Hiçbir şekilde log kaydı yapılmayacak
-  - `Log::info()`, `Log::error()`, `Log::debug()` kullanımı yasak
-  - `storage/logs` klasörü boş kalacak
-  - `.env` dosyasında `LOG_CHANNEL=null` olacak
-
-### Yasaklı Dosya Oluşturma
-- **README Dosyaları**: Hiçbir özellik için README.md oluşturulmayacak
-- **Dokümantasyon Dosyaları**: .md uzantılı dosyalar yasaklı
-- **CHANGELOG**: Versiyon geçmişi dosyaları oluşturulmayacak
-
-### Güvenlik ve Performance
-- **Debug Modu**: Production'da mutlaka kapalı olacak
-- **Query Logging**: Database query logları devre dışı
-- **Session Logging**: Session aktiviteleri loglanmayacak
-- **Error Reporting**: Sadece geliştirme ortamında aktif
-
-## 4. Kod Kalitesi ve Hata Azaltma Kuralları
-
-### Laravel 12 Best Practices
-- **Dependency Injection**: PHP 8+ property promotion kullanılacak
-- **Query Builder**: Laravel 12'nin yeni nested query metodları kullanılacak
-- **Caching**: Asynchronous caching mechanisms tercih edilecek
-- **UUIDs**: UUIDv7 (ordered UUIDs) kullanılacak
-
-### Alpine.js Entegrasyonu
-- **CDN Kullanımı**: `<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>`
-- **x-data Direktifi**: Her Alpine component'i için zorunlu
-- **Defer Attribute**: Script tag'inde mutlaka defer kullanılacak
-- **Global Alpine**: `window.Alpine` erişimi için ayarlanacak
-
-### Tailwind CSS Optimizasyonu
-- **JIT Mode**: Just-In-Time compilation aktif olacak
-- **Purge CSS**: Kullanılmayan CSS'ler otomatik temizlenecek
-- **Component Classes**: @apply direktifi ile custom component'ler
-- **Responsive Design**: Mobile-first yaklaşım benimsenecek
-
-## 5. Sistem Anlayışı ve Güncellemeler
-
-### Otomatik Sistem Tanıma
-- **Migration Patterns**: Consistent naming convention
-- **Model Relationships**: Explicit relationship tanımları
-- **Controller Structure**: Resource controller pattern
-- **Route Organization**: API ve web route'ları ayrı dosyalarda
-
-### Yeni Özellik Ekleme Protokolü
-1. **Feature Branch**: Her yeni özellik için ayrı branch
-2. **Test-Driven Development**: Önce test, sonra implementation
-3. **Code Review**: Peer review zorunlu
-4. **Performance Check**: Her özellik performance impact analizi
-
-### Güncelleme Stratejisi
-- **Semantic Versioning**: Laravel'in version constraint'leri takip edilecek
-- **Dependency Updates**: Haftalık bağımlılık kontrolü
-- **Security Patches**: Güvenlik güncellemeleri öncelikli
-- **Breaking Changes**: Major version güncellemelerinde dikkatli analiz
-
-## 6. Geliştirme Ortamı Kuralları
-
-### Zorunlu Konfigürasyonlar
-```env
-LOG_CHANNEL=null
-LOG_LEVEL=emergency
-DB_CONNECTION=mysql
-CACHE_DRIVER=redis
-SESSION_DRIVER=redis
-QUEUE_CONNECTION=redis
+### Temel Component Özellikleri
+```php
+class ExampleList extends Component
+{
+    // Public properties - Blade'de kullanılabilir
+    public $items = [];
+    public $newItem = [];
+    public $editingItem = null;
+    public $showModal = false;
+    
+    // Validation rules
+    protected $rules = [
+        'newItem.name' => 'required|string|max:255',
+        'newItem.description' => 'nullable|string'
+    ];
+    
+    // Mount method - Component yüklendiğinde çalışır
+    public function mount()
+    {
+        $this->loadItems();
+        $this->resetForm();
+    }
+}
 ```
 
-### Yasaklı Middleware
-- Logging middleware'leri kullanılmayacak
-- Debug bar production'da kapalı olacak
-- Telescope sadece local environment'ta aktif
+## 2. CRUD İşlemleri - Kayıt Ekleme (Create)
 
-### Performance Optimizasyonları
-- **OPcache**: PHP OPcache aktif olacak
-- **Redis**: Caching ve session için Redis kullanılacak
-- **Queue Workers**: Background job'lar için queue system
-- **Database Indexing**: Kritik query'ler için index optimizasyonu
+### Livewire Component Method
+```php
+public function create()
+{
+    $this->validate();
+    
+    // Yeni kayıt oluştur
+    ExampleModel::create([
+        'name' => $this->newItem['name'],
+        'description' => $this->newItem['description'],
+        'user_id' => auth()->id(),
+        'created_at' => now()
+    ]);
+    
+    // Form'u temizle
+    $this->resetForm();
+    
+    // Listeyi yenile
+    $this->loadItems();
+    
+    // Modal'ı kapat
+    $this->showModal = false;
+    
+    // Başarı mesajı
+    session()->flash('message', 'Kayıt başarıyla eklendi.');
+}
 
-Bu kurallar, Laravel 12 ile kusursuz, hızlı ve güvenli bir klinik yönetim sistemi geliştirmek için tasarlanmıştır.
+public function resetForm()
+{
+    $this->newItem = [
+        'name' => '',
+        'description' => ''
+    ];
+}
+```
+
+### Blade Template (Create)
+```html
+<!-- Ekleme Butonu -->
+<button wire:click="$set('showModal', true)" class="bg-blue-500 text-white px-4 py-2 rounded">
+    Yeni Ekle
+</button>
+
+<!-- Modal Form -->
+@if($showModal)
+<div class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-6 rounded-lg w-96">
+        <h3 class="text-lg font-semibold mb-4">Yeni Kayıt Ekle</h3>
+        
+        <form wire:submit.prevent="create">
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">İsim</label>
+                <input type="text" wire:model="newItem.name" class="w-full border rounded px-3 py-2">
+                @error('newItem.name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium mb-2">Açıklama</label>
+                <textarea wire:model="newItem.description" class="w-full border rounded px-3 py-2"></textarea>
+            </div>
+            
+            <div class="flex justify-end space-x-2">
+                <button type="button" wire:click="$set('showModal', false)" class="bg-gray-500 text-white px-4 py-2 rounded">
+                    İptal
+                </button>
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">
+                    Kaydet
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@endif
+```
+
+## 3. CRUD İşlemleri - Kayıt Güncelleme (Update)
+
+### Livewire Component Method
+```php
+public function edit($itemId)
+{
+    $item = ExampleModel::findOrFail($itemId);
+    
+    // Düzenleme moduna geç
+    $this->editingItem = $item->id;
+    $this->newItem = [
+        'name' => $item->name,
+        'description' => $item->description
+    ];
+    $this->showModal = true;
+}
+
+public function update()
+{
+    $this->validate();
+    
+    $item = ExampleModel::findOrFail($this->editingItem);
+    
+    // Yetki kontrolü
+    if (!$this->canEdit($item)) {
+        session()->flash('error', 'Bu kaydı düzenleme yetkiniz yok.');
+        return;
+    }
+    
+    // Kaydı güncelle
+    $item->update([
+        'name' => $this->newItem['name'],
+        'description' => $this->newItem['description'],
+        'updated_at' => now()
+    ]);
+    
+    // Form'u temizle
+    $this->resetEditForm();
+    
+    // Listeyi yenile
+    $this->loadItems();
+    
+    session()->flash('message', 'Kayıt başarıyla güncellendi.');
+}
+
+public function resetEditForm()
+{
+    $this->editingItem = null;
+    $this->newItem = [];
+    $this->showModal = false;
+}
+```
+
+### Blade Template (Update)
+```html
+<!-- Düzenleme Butonu -->
+<button wire:click="edit({{ $item->id }})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm">
+    Düzenle
+</button>
+
+<!-- Modal Form (Aynı form, başlık değişir) -->
+<h3 class="text-lg font-semibold mb-4">
+    {{ $editingItem ? 'Kayıt Düzenle' : 'Yeni Kayıt Ekle' }}
+</h3>
+
+<!-- Submit butonu -->
+<button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">
+    {{ $editingItem ? 'Güncelle' : 'Kaydet' }}
+</button>
+```
+
+## 4. CRUD İşlemleri - Kayıt Silme (Delete)
+
+### Livewire Component Method
+```php
+public function delete($itemId)
+{
+    $item = ExampleModel::findOrFail($itemId);
+    
+    // Yetki kontrolü
+    if (!$this->canDelete($item)) {
+        session()->flash('error', 'Bu kaydı silme yetkiniz yok.');
+        return;
+    }
+    
+    // Kaydı sil
+    $item->delete();
+    
+    // Listeyi yenile
+    $this->loadItems();
+    
+    session()->flash('message', 'Kayıt başarıyla silindi.');
+}
+
+// Yetki kontrol methodları
+public function canEdit($item)
+{
+    $user = auth()->user();
+    
+    // Admin her şeyi düzenleyebilir
+    if ($user->role === 'admin') {
+        return true;
+    }
+    
+    // Kullanıcı sadece kendi kayıtlarını düzenleyebilir
+    return $item->user_id === $user->id;
+}
+
+public function canDelete($item)
+{
+    $user = auth()->user();
+    
+    // Admin her şeyi silebilir
+    if ($user->role === 'admin') {
+        return true;
+    }
+    
+    // Kullanıcı sadece kendi kayıtlarını silebilir
+    return $item->user_id === $user->id;
+}
+```
+
+### Blade Template (Delete)
+```html
+<!-- Silme Butonu (Onay ile) -->
+<button 
+    wire:click="delete({{ $item->id }})" 
+    wire:confirm="Bu kaydı silmek istediğinizden emin misiniz?"
+    class="bg-red-500 text-white px-3 py-1 rounded text-sm"
+>
+    Sil
+</button>
+
+<!-- Yetki kontrolü ile gösterme -->
+@if($this->canDelete($item))
+    <button wire:click="delete({{ $item->id }})" wire:confirm="Silmek istediğinizden emin misiniz?">
+        Sil
+    </button>
+@endif
+```
+
+## 5. Veri Yükleme ve Listeleme
+
+### Livewire Component Method
+```php
+public function loadItems()
+{
+    $query = ExampleModel::query();
+    
+    // Kullanıcı rolüne göre filtreleme
+    if (auth()->user()->role !== 'admin') {
+        $query->where('user_id', auth()->id());
+    }
+    
+    // Sıralama
+    $query->orderBy('created_at', 'desc');
+    
+    $this->items = $query->get();
+}
+
+// Computed property olarak da kullanılabilir
+public function getItemsProperty()
+{
+    return ExampleModel::when(auth()->user()->role !== 'admin', function($query) {
+        $query->where('user_id', auth()->id());
+    })->orderBy('created_at', 'desc')->get();
+}
+```
+
+### Blade Template (Listeleme)
+```html
+<!-- Liste Tablosu -->
+<div class="overflow-x-auto">
+    <table class="min-w-full bg-white border border-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">İsim</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Açıklama</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tarih</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">İşlemler</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            @forelse($items as $item)
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $item->name }}</td>
+                    <td class="px-6 py-4 text-sm text-gray-900">{{ $item->description }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $item->created_at->format('d.m.Y H:i') }}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm space-x-2">
+                        @if($this->canEdit($item))
+                            <button wire:click="edit({{ $item->id }})" class="bg-yellow-500 text-white px-3 py-1 rounded text-sm">
+                                Düzenle
+                            </button>
+                        @endif
+                        
+                        @if($this->canDelete($item))
+                            <button wire:click="delete({{ $item->id }})" wire:confirm="Silmek istediğinizden emin misiniz?" class="bg-red-500 text-white px-3 py-1 rounded text-sm">
+                                Sil
+                            </button>
+                        @endif
+                    </td>
+                </tr>
+            @empty
+                <tr>
+                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">
+                        Henüz kayıt bulunmuyor.
+                    </td>
+                </tr>
+            @endforelse
+        </tbody>
+    </table>
+</div>
+```
+
+## 6. Rol Tabanlı Yetkilendirme Sistemi
+
+### Yetki Kontrol Methodları
+```php
+// Genel yetki kontrol trait'i
+trait HasPermissions
+{
+    public function canCreate()
+    {
+        $user = auth()->user();
+        return in_array($user->role, ['admin', 'doctor', 'nurse']);
+    }
+    
+    public function canEdit($model)
+    {
+        $user = auth()->user();
+        
+        // Admin her şeyi yapabilir
+        if ($user->role === 'admin') {
+            return true;
+        }
+        
+        // Doktor sadece kendi kayıtlarını düzenleyebilir
+        if ($user->role === 'doctor') {
+            return $model->user_id === $user->id;
+        }
+        
+        // Hemşire ve sekreter birbirlerinin kayıtlarını düzenleyebilir ama doktorunkini değil
+        if (in_array($user->role, ['nurse', 'secretary'])) {
+            $modelOwner = User::find($model->user_id);
+            return $modelOwner->role !== 'doctor';
+        }
+        
+        return false;
+    }
+    
+    public function canDelete($model)
+    {
+        // Silme yetkileri düzenleme ile aynı
+        return $this->canEdit($model);
+    }
+    
+    public function canView($model)
+    {
+        $user = auth()->user();
+        
+        // Özel kayıtlar sadece sahibi tarafından görülebilir
+        if (isset($model->is_private) && $model->is_private) {
+            return $model->user_id === $user->id;
+        }
+        
+        // Genel kayıtlar herkese açık
+        return true;
+    }
+}
+```
+
+## 7. Validation ve Error Handling
+
+### Validation Rules
+```php
+protected $rules = [
+    'newItem.name' => 'required|string|max:255',
+    'newItem.email' => 'required|email|unique:users,email',
+    'newItem.phone' => 'nullable|string|max:20',
+    'newItem.date' => 'required|date|after_or_equal:today'
+];
+
+// Real-time validation
+protected $validationAttributes = [
+    'newItem.name' => 'isim',
+    'newItem.email' => 'e-posta',
+    'newItem.phone' => 'telefon'
+];
+
+// Custom validation messages
+protected $messages = [
+    'newItem.name.required' => 'İsim alanı zorunludur.',
+    'newItem.email.unique' => 'Bu e-posta adresi zaten kullanılıyor.'
+];
+```
+
+### Error Handling
+```php
+public function create()
+{
+    try {
+        $this->validate();
+        
+        ExampleModel::create($this->newItem);
+        
+        session()->flash('message', 'Kayıt başarıyla eklendi.');
+        $this->resetForm();
+        
+    } catch (ValidationException $e) {
+        // Validation hataları otomatik olarak gösterilir
+        throw $e;
+        
+    } catch (Exception $e) {
+        session()->flash('error', 'Bir hata oluştu: ' . $e->getMessage());
+    }
+}
+```
+
+## 8. Performance Optimizasyonu
+
+### Lazy Loading ve Caching
+```php
+// Lazy loading için
+public function loadItems()
+{
+    $this->items = ExampleModel::with(['user', 'category'])
+        ->when($this->search, function($query) {
+            $query->where('name', 'like', '%' . $this->search . '%');
+        })
+        ->orderBy('created_at', 'desc')
+        ->get();
+}
+
+// Computed property ile caching
+public function getItemsProperty()
+{
+    return once(function () {
+        return ExampleModel::with('user')->get();
+    });
+}
+```
+
+### Wire:key Kullanımı
+```html
+<!-- Liste elemanları için unique key -->
+@foreach($items as $item)
+    <tr wire:key="item-{{ $item->id }}">
+        <!-- İçerik -->
+    </tr>
+@endforeach
+```
+
+Bu kurallar tüm Livewire component'leri için geçerlidir ve hasta notları sisteminde kullanılan yapının aynısıdır.

@@ -14,6 +14,15 @@ class UserRoleSeeder extends Seeder
      */
     public function run(): void
     {
+        // Admin hesabı
+        User::create([
+            'name' => 'Admin User',
+            'email' => 'admin@klinik.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'email_verified_at' => now(),
+        ]);
+
         // Doktor hesabı
         User::create([
             'name' => 'Dr. Mehmet Özkan',
