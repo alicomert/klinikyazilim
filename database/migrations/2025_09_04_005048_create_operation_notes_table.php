@@ -24,7 +24,7 @@ return new class extends Migration
             $table->index('user_id');
             
             // Not Bilgileri
-            $table->enum('note_type', ['general', 'medical', 'procedure', 'followup'])->index(); // Not türü
+            $table->enum('note_type', ['general', 'medical', 'procedure', 'followup', 'administrative'])->index(); // Not türü
             $table->text('content'); // Not içeriği
             $table->boolean('is_private')->default(false)->index(); // Sadece doktorların kullanabileceği gizli notlar
             

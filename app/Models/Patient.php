@@ -18,7 +18,6 @@ class Patient extends Model
         'phone',
         'birth_date',
         'address',
-        'registration_period',
         'medications',
         'allergies',
         'previous_operations',

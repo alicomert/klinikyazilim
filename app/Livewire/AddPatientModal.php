@@ -23,7 +23,7 @@ class AddPatientModal extends Component
     public $phone = '';
     public $birth_date = '';
     public $address = '';
-    public $registration_period = '';
+
     
     // Tıbbi Bilgiler
     public $medications = '';
@@ -43,7 +43,7 @@ class AddPatientModal extends Component
             'phone' => 'required|string|max:20',
             'birth_date' => 'required|date|before:today',
             'address' => 'nullable|string',
-            'registration_period' => 'required|string|regex:/^\d{2}\.\d{4}$/',
+
             'medications' => 'nullable|string',
             'allergies' => 'nullable|string',
             'previous_operations' => 'nullable|string',
@@ -72,8 +72,7 @@ class AddPatientModal extends Component
         'phone.required' => 'Telefon numarası zorunludur.',
         'birth_date.required' => 'Doğum tarihi zorunludur.',
         'birth_date.before' => 'Doğum tarihi bugünden önce olmalıdır.',
-        'registration_period.required' => 'Kayıt dönemi zorunludur.',
-        'registration_period.regex' => 'Kayıt dönemi AA.YYYY formatında olmalıdır (örn: 08.2025).',
+
     ];
     
     public function openModal($patientId = null)
@@ -100,7 +99,7 @@ class AddPatientModal extends Component
             $this->phone = $patient->phone;
             $this->birth_date = $patient->birth_date;
             $this->address = $patient->address;
-            $this->registration_period = $patient->registration_period;
+
             $this->medications = $patient->medications;
             $this->allergies = $patient->allergies;
             $this->previous_operations = $patient->previous_operations;
@@ -123,7 +122,7 @@ class AddPatientModal extends Component
     
     public function mount()
     {
-        $this->registration_period = Carbon::now()->format('m.Y');
+
     }
     
     public function resetForm()
@@ -134,7 +133,7 @@ class AddPatientModal extends Component
         $this->phone = '';
         $this->birth_date = '';
         $this->address = '';
-        $this->registration_period = Carbon::now()->format('m.Y');
+
         $this->medications = '';
         $this->allergies = '';
         $this->previous_operations = '';
@@ -165,7 +164,7 @@ class AddPatientModal extends Component
                 'phone' => $this->phone,
                 'birth_date' => $this->birth_date,
                 'address' => $this->address,
-                'registration_period' => $this->registration_period,
+
                 'medications' => $this->medications,
                 'allergies' => $this->allergies,
                 'previous_operations' => $this->previous_operations,

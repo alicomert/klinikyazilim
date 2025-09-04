@@ -89,18 +89,6 @@
                                     @enderror
                                 </div>
                                 
-                                <!-- Telefon -->
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Telefon *</label>
-                                    <input type="tel" 
-                                           wire:model="phone" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('phone') border-red-500 @enderror"
-                                           placeholder="0532 123 45 67">
-                                    @error('phone') 
-                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
-                                    @enderror
-                                </div>
-                                
                                 <!-- Doğum Tarihi -->
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Doğum Tarihi *</label>
@@ -112,19 +100,16 @@
                                     @enderror
                                 </div>
                                 
-                                <!-- Kayıt Dönemi -->
+                                <!-- Telefon -->
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Kayıt Dönemi *</label>
-                                    <input type="text" 
-                                           wire:model="registration_period" 
-                                           placeholder="08.2025"
-                                           pattern="\d{2}\.\d{4}"
-                                           maxlength="7"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('registration_period') border-red-500 @enderror">
-                                    @error('registration_period') 
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Telefon *</label>
+                                    <input type="tel" 
+                                           wire:model="phone" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('phone') border-red-500 @enderror"
+                                           placeholder="0532 123 45 67">
+                                    @error('phone') 
                                         <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
                                     @enderror
-                                    <p class="text-xs text-gray-500 mt-1">Format: AA.YYYY (örn: 08.2025)</p>
                                 </div>
                                 
                                 <!-- Adres -->

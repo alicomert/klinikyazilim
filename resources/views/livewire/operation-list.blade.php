@@ -83,16 +83,78 @@
         <div class="bg-white rounded-lg shadow-sm p-6 card-shadow">
             <div class="flex items-center justify-between">
                 <div>
-                    <div class="text-gray-500 text-sm font-medium">En Popüler İşlem</div>
-                    <div class="text-3xl font-bold text-yellow-600 mt-2">{{ $this->botoxCount }}</div>
+                    <div class="text-gray-500 text-sm font-medium">Toplam Hasta</div>
+                    <div class="text-3xl font-bold text-orange-600 mt-2">{{ $this->stats['total_patients'] ?? 0 }}</div>
                     <div class="text-gray-500 text-sm mt-1">
-                        <i class="fas fa-star"></i> Botoks işlemi
+                        <i class="fas fa-users"></i> Kayıtlı hastalar
                     </div>
                 </div>
-                <div class="bg-yellow-100 p-4 rounded-full">
-                    <i class="fas fa-star text-yellow-600 text-2xl"></i>
+                <div class="bg-orange-100 p-4 rounded-full">
+                    <i class="fas fa-users text-orange-600 text-2xl"></i>
                 </div>
             </div>
+        </div>
+    </div>
+
+    <!-- İşlem Türü İstatistikleri -->
+    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 card-shadow">
+        <!-- Dönem Seçici -->
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-lg font-semibold text-gray-800">İşlem Türü İstatistikleri</h3>
+            <div class="flex space-x-2">
+                <button wire:click="changeStatsPeriod('monthly')" 
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                               {{ $statsPeriod === 'monthly' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Aylık
+                </button>
+                <button wire:click="changeStatsPeriod('yearly')" 
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                               {{ $statsPeriod === 'yearly' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Yıllık
+                </button>
+                <button wire:click="changeStatsPeriod('this_year')" 
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                               {{ $statsPeriod === 'this_year' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Bu Yıl
+                </button>
+                <button wire:click="changeStatsPeriod('all')" 
+                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                               {{ $statsPeriod === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                    Tümü
+                </button>
+            </div>
+        </div>
+
+        <!-- İşlem Türü Kartları -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @foreach($this->processStats as $processKey => $stat)
+                <div class="bg-gradient-to-br from-{{ $loop->index % 4 === 0 ? 'blue' : ($loop->index % 4 === 1 ? 'green' : ($loop->index % 4 === 2 ? 'purple' : 'pink')) }}-50 to-{{ $loop->index % 4 === 0 ? 'blue' : ($loop->index % 4 === 1 ? 'green' : ($loop->index % 4 === 2 ? 'purple' : 'pink')) }}-100 rounded-lg p-4 border border-{{ $loop->index % 4 === 0 ? 'blue' : ($loop->index % 4 === 1 ? 'green' : ($loop->index % 4 === 2 ? 'purple' : 'pink')) }}-200">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="text-sm font-medium text-gray-700">{{ $stat['label'] }}</h4>
+                        <i class="fas fa-{{ $processKey === 'surgery' ? 'user-md' : ($processKey === 'mesotherapy' ? 'syringe' : ($processKey === 'botox' ? 'magic' : 'fill-drip')) }} text-{{ $loop->index % 4 === 0 ? 'blue' : ($loop->index % 4 === 1 ? 'green' : ($loop->index % 4 === 2 ? 'purple' : 'pink')) }}-600"></i>
+                    </div>
+                    <div class="text-2xl font-bold text-{{ $loop->index % 4 === 0 ? 'blue' : ($loop->index % 4 === 1 ? 'green' : ($loop->index % 4 === 2 ? 'purple' : 'pink')) }}-700 mb-1">
+                        {{ $stat['current'] }}
+                    </div>
+                    @if($stat['percentage_change'] != 0)
+                        <div class="text-xs text-{{ $stat['percentage_change'] >= 0 ? 'green' : 'red' }}-600 flex items-center">
+                            <i class="fas fa-arrow-{{ $stat['percentage_change'] >= 0 ? 'up' : 'down' }} mr-1"></i>
+                            %{{ abs($stat['percentage_change']) }} 
+                            @if($statsPeriod === 'monthly')
+                                geçen aya göre
+                            @elseif($statsPeriod === 'yearly' || $statsPeriod === 'this_year')
+                                geçen yıla göre
+                            @else
+                                geçen aya göre
+                            @endif
+                        </div>
+                    @else
+                        <div class="text-xs text-gray-500">
+                            {{ $this->periodLabel }} verisi
+                        </div>
+                    @endif
+                </div>
+            @endforeach
         </div>
     </div>
 
@@ -365,7 +427,7 @@
                                     <option value="general">Genel</option>
                                     <option value="medical">Tıbbi</option>
                                     <option value="administrative">İdari</option>
-                                    <option value="follow_up">Takip</option>
+                                    <option value="followup">Takip</option>
                                 </select>
                             </div>
                             
@@ -705,3 +767,19 @@
     </div>
     @endif
 </div>
+
+<script>
+    // LocalStorage ile dönem seçimini kaydet
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sayfa yüklendiğinde localStorage'dan dönem seçimini al
+        const savedPeriod = localStorage.getItem('operation_stats_period');
+        if (savedPeriod) {
+            @this.set('statsPeriod', savedPeriod);
+        }
+        
+        // Dönem değiştiğinde localStorage'a kaydet
+        Livewire.on('statsperiodchanged', function(period) {
+            localStorage.setItem('operation_stats_period', period);
+        });
+    });
+</script>

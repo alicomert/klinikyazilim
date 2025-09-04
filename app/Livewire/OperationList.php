@@ -5,6 +5,7 @@ namespace App\Livewire;
 use App\Models\Operation;
 use App\Models\OperationNote;
 use App\Models\Patient;
+use App\Models\Activity;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -37,6 +38,9 @@ class OperationList extends Component
     public $filteredPatients = [];
     public $selectedPatient = null;
     public $showPatientDetails = false;
+    
+    // Yeni istatistik sistemi için
+    public $statsPeriod = 'monthly'; // monthly, yearly, this_year, all
 
     // Validation rules
     protected $rules = [
@@ -62,6 +66,9 @@ class OperationList extends Component
         $this->resetForm();
         $this->currentRegistrationPeriod = $this->getCurrentRegistrationPeriod();
         $this->filteredPatients = []; // Başlangıçta boş liste
+        
+        // LocalStorage'dan istatistik dönemini al
+        $this->statsPeriod = session('operation_stats_period', 'monthly');
     }
 
     // Month input için YYYY-MM formatı
@@ -114,12 +121,26 @@ class OperationList extends Component
     public function updatedPatientSearch()
     {
         if (empty($this->patientSearch)) {
-            $this->filteredPatients = $this->patients;
+            $this->filteredPatients = [];
         } else {
-            $this->filteredPatients = collect($this->patients)->filter(function ($patient) {
-                return stripos($patient->first_name . ' ' . $patient->last_name, $this->patientSearch) !== false ||
-                       stripos($patient->tc_identity, $this->patientSearch) !== false;
-            })->values()->all();
+            // Veritabanından direkt arama yap
+            $this->filteredPatients = Patient::where(function($query) {
+                $query->where('first_name', 'like', '%' . $this->patientSearch . '%')
+                      ->orWhere('last_name', 'like', '%' . $this->patientSearch . '%')
+                      ->orWhereRaw('CONCAT(first_name, " ", last_name) LIKE ?', ['%' . $this->patientSearch . '%']);
+                
+                // TC kimlik arama
+                if (preg_match('/^[0-9]+$/', $this->patientSearch)) {
+                    // Tam TC kimlik (11 haneli) için şifreli arama
+                    if (strlen($this->patientSearch) === 11) {
+                        $patient = new Patient();
+                        $encryptedTc = $patient->encryptField('tc_identity', $this->patientSearch);
+                        $query->orWhere('tc_identity', $encryptedTc);
+                    }
+                    // Kısmi TC arama için şifresiz arama da dene
+                    $query->orWhere('tc_identity', 'like', '%' . $this->patientSearch . '%');
+                }
+            })->orderBy('first_name')->orderBy('last_name')->get();
         }
     }
 
@@ -199,6 +220,9 @@ class OperationList extends Component
         // Toplam operasyonlar
         $totalOperations = Operation::count();
         
+        // Toplam hasta sayısı
+        $totalPatients = \App\Models\Patient::count();
+        
         // Geçen yıl aynı dönem karşılaştırması
         $previousYearSameMonth = Operation::whereMonth('process_date', $currentMonth)
                                           ->whereYear('process_date', $previousYear)
@@ -222,6 +246,7 @@ class OperationList extends Component
             'total_operations' => $totalOperations,
             'this_year_operations' => $thisYearOperations,
             'this_month_operations' => $thisMonthOperations,
+            'total_patients' => $totalPatients,
             'monthly_percentage_change' => round($monthlyPercentageChange, 1),
             'yearly_percentage_change' => round($yearlyPercentageChange, 1),
             'has_previous_year_data' => $previousYearTotal > 0
@@ -235,7 +260,19 @@ class OperationList extends Component
                 $q->whereHas('patient', function($patientQuery) {
                     $patientQuery->where('first_name', 'like', '%' . $this->searchTerm . '%')
                                 ->orWhere('last_name', 'like', '%' . $this->searchTerm . '%')
-                                ->orWhere('tc_identity', 'like', '%' . $this->searchTerm . '%');
+                                ->orWhereRaw('CONCAT(first_name, " ", last_name) LIKE ?', ['%' . $this->searchTerm . '%']);
+                    
+                    // TC kimlik arama - hem şifreli hem şifresiz
+                    if (preg_match('/^[0-9]+$/', $this->searchTerm)) {
+                        // Tam TC kimlik (11 haneli) için şifreli arama
+                        if (strlen($this->searchTerm) === 11) {
+                            $patient = new Patient();
+                            $encryptedTc = $patient->encryptField('tc_identity', $this->searchTerm);
+                            $patientQuery->orWhere('tc_identity', $encryptedTc);
+                        }
+                        // Kısmi TC arama için şifresiz arama da dene
+                        $patientQuery->orWhere('tc_identity', 'like', '%' . $this->searchTerm . '%');
+                    }
                 })
                 ->orWhere('process_detail', 'like', '%' . $this->searchTerm . '%');
             })
@@ -268,13 +305,20 @@ class OperationList extends Component
     {
         $this->validate();
 
-        Operation::create([
+        $operation = Operation::create([
             'patient_id' => $this->newOperation['patient_id'],
             'process' => $this->newOperation['process'],
             'process_detail' => $this->newOperation['process_detail'],
             'process_date' => Carbon::today(),
             'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period']),
             'created_by' => auth()->id()
+        ]);
+
+        // Activities tablosuna kayıt ekle
+        Activity::create([
+            'type' => 'operation_added',
+            'description' => 'Yeni operasyon eklendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
+            'patient_id' => $this->newOperation['patient_id']
         ]);
 
         $this->closeModal();
@@ -320,6 +364,13 @@ class OperationList extends Component
             'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period'])
         ]);
 
+        // Activities tablosuna kayıt ekle
+        Activity::create([
+            'type' => 'operation_updated',
+            'description' => 'Operasyon güncellendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
+            'patient_id' => $this->newOperation['patient_id']
+        ]);
+
         $this->closeModal();
         $this->loadOperations();
 
@@ -334,6 +385,13 @@ class OperationList extends Component
             session()->flash('error', 'Bu operasyonu silme yetkiniz yok.');
             return;
         }
+
+        // Activities tablosuna kayıt ekle (silmeden önce)
+        Activity::create([
+            'type' => 'operation_deleted',
+            'description' => 'Operasyon silindi: ' . $operation->process . ' - ' . substr($operation->process_detail, 0, 50) . (strlen($operation->process_detail) > 50 ? '...' : ''),
+            'patient_id' => $operation->patient_id
+        ]);
 
         $operation->delete();
         $this->loadOperations();
@@ -480,13 +538,20 @@ class OperationList extends Component
                 'last_updated' => now()
             ]);
 
+            // Activities tablosuna kayıt ekle
+            Activity::create([
+                'type' => 'operation_note_updated',
+                'description' => 'Operasyon notu güncellendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
+                'patient_id' => $note->operation->patient_id
+            ]);
+
             $this->dispatch('show-toast', [
                 'type' => 'success',
                 'message' => 'Not başarıyla güncellendi.'
             ]);
         } else {
             // Yeni not ekleme
-            OperationNote::create([
+            $operationNote = OperationNote::create([
                 'operation_id' => $this->selectedOperationForNotes->id,
                 'user_id' => Auth::id(),
                 'content' => $this->newNote['content'],
@@ -494,6 +559,13 @@ class OperationList extends Component
                 'is_private' => $this->newNote['is_private'],
                 'note_date' => now(),
                 'last_updated' => now()
+            ]);
+
+            // Activities tablosuna kayıt ekle
+            Activity::create([
+                'type' => 'operation_note_added',
+                'description' => 'Operasyon notu eklendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
+                'patient_id' => $this->selectedOperationForNotes->patient_id
             ]);
 
             $this->dispatch('show-toast', [
@@ -538,6 +610,13 @@ class OperationList extends Component
             ]);
             return;
         }
+
+        // Activities tablosuna kayıt ekle (silmeden önce)
+        Activity::create([
+            'type' => 'operation_note_deleted',
+            'description' => 'Operasyon notu silindi: ' . substr($note->content, 0, 50) . (strlen($note->content) > 50 ? '...' : ''),
+            'patient_id' => $note->operation->patient_id
+        ]);
 
         $note->delete();
         
@@ -624,5 +703,101 @@ class OperationList extends Component
             ->sort()
             ->values()
             ->toArray();
+    }
+    
+    // İstatistik dönemi değiştirme
+    public function changeStatsPeriod($period)
+    {
+        $this->statsPeriod = $period;
+        session(['operation_stats_period' => $period]);
+        
+        // JavaScript'e event gönder
+        $this->dispatch('statsperiodchanged', $period);
+    }
+    
+    // Yeni istatistik sistemi
+    public function getProcessStatsProperty()
+    {
+        $currentDate = now();
+        $processes = ['surgery', 'mesotherapy', 'botox', 'filler'];
+        $stats = [];
+        
+        foreach ($processes as $process) {
+            $current = $this->getProcessCount($process, $this->statsPeriod);
+            $previous = $this->getProcessCount($process, $this->statsPeriod, true);
+            
+            $percentageChange = 0;
+            if ($previous > 0) {
+                $percentageChange = (($current - $previous) / $previous) * 100;
+            }
+            
+            $stats[$process] = [
+                'current' => $current,
+                'previous' => $previous,
+                'percentage_change' => round($percentageChange, 1),
+                'label' => $this->getProcessLabel($process)
+            ];
+        }
+        
+        return $stats;
+    }
+    
+    private function getProcessCount($process, $period, $isPrevious = false)
+    {
+        $query = Operation::where('process', $process);
+        
+        switch ($period) {
+            case 'monthly':
+                $month = $isPrevious ? now()->subMonth() : now();
+                $query->whereMonth('process_date', $month->month)
+                      ->whereYear('process_date', $month->year);
+                break;
+                
+            case 'yearly':
+                $year = $isPrevious ? now()->subYear() : now();
+                $query->whereYear('process_date', $year->year);
+                break;
+                
+            case 'this_year':
+                if ($isPrevious) {
+                    $query->whereYear('process_date', now()->subYear()->year);
+                } else {
+                    $query->whereYear('process_date', now()->year);
+                }
+                break;
+                
+            case 'all':
+                if ($isPrevious) {
+                    // Tümü için önceki ay karşılaştırması
+                    $query->where('process_date', '<', now()->startOfMonth());
+                } else {
+                    // Tüm veriler
+                }
+                break;
+        }
+        
+        return $query->count();
+    }
+    
+    private function getProcessLabel($process)
+    {
+        return match($process) {
+            'surgery' => 'Ameliyat',
+            'mesotherapy' => 'Mezoterapi',
+            'botox' => 'Botoks',
+            'filler' => 'Dolgu',
+            default => $process
+        };
+    }
+    
+    public function getPeriodLabelProperty()
+    {
+        return match($this->statsPeriod) {
+            'monthly' => 'Aylık',
+            'yearly' => 'Yıllık',
+            'this_year' => 'Bu Yıl',
+            'all' => 'Tümü',
+            default => 'Aylık'
+        };
     }
 }

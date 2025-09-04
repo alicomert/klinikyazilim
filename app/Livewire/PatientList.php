@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Patient;
 use App\Models\PatientNote;
+use App\Models\Activity;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
@@ -334,13 +335,20 @@ class PatientList extends Component
                 'last_updated' => now()
             ]);
 
+            // Activities tablosuna kayıt ekle
+            Activity::create([
+                'type' => 'patient_note_updated',
+                'description' => 'Hasta notu güncellendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
+                'patient_id' => $this->selectedPatientForNotes->id
+            ]);
+
             $this->dispatch('show-toast', [
                 'type' => 'success',
                 'message' => 'Not başarıyla güncellendi.'
             ]);
         } else {
             // Yeni not ekleme
-            PatientNote::create([
+            $patientNote = PatientNote::create([
                 'patient_id' => $this->selectedPatientForNotes->id,
                 'user_id' => Auth::id(),
                 'content' => $this->newNote['content'],
@@ -348,6 +356,13 @@ class PatientList extends Component
                 'is_private' => $this->newNote['is_private'],
                 'note_date' => now(),
                 'last_updated' => now()
+            ]);
+
+            // Activities tablosuna kayıt ekle
+            Activity::create([
+                'type' => 'patient_note_added',
+                'description' => 'Hasta notu eklendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
+                'patient_id' => $this->selectedPatientForNotes->id
             ]);
 
             $this->dispatch('show-toast', [
@@ -392,6 +407,13 @@ class PatientList extends Component
             ]);
             return;
         }
+
+        // Activities tablosuna kayıt ekle (silmeden önce)
+        Activity::create([
+            'type' => 'patient_note_deleted',
+            'description' => 'Hasta notu silindi: ' . substr($note->content, 0, 50) . (strlen($note->content) > 50 ? '...' : ''),
+            'patient_id' => $note->patient_id
+        ]);
 
         $note->delete();
         
