@@ -8,7 +8,8 @@
     }"
     x-data="{
         menuItems: [
-            { id: 'dashboard', name: 'Dashboard', icon: 'fas fa-tachometer-alt', route: '/' },
+            { id: 'dashboard', name: 'Anasayfa', icon: 'fas fa-tachometer-alt', route: '/' },
+            { id: 'clinic', name: 'Randevular', icon: 'fas fa-calendar-alt', route: '/clinic' },
             { id: 'patients', name: 'Hasta Kayıtları', icon: 'fas fa-users', route: '/patients' },
             { id: 'operations', name: 'Operasyonlar', icon: 'fas fa-procedures', route: '/operations' },
             { id: 'settings', name: 'Ayarlar', icon: 'fas fa-cog', route: '/settings' },

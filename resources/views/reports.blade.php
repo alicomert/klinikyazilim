@@ -6,12 +6,7 @@
     <!-- Rapor Türü Seçimi -->
     <div class="bg-white rounded-lg shadow-sm p-6 mb-6 no-print">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Rapor Türü Seçin</h3>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <button onclick="showReport('financial', this)" class="report-btn bg-green-50 border-2 border-green-200 p-4 rounded-lg hover:bg-green-100 transition-colors">
-                <i class="fas fa-money-bill-wave text-green-600 text-2xl mb-2"></i>
-                <h4 class="font-semibold text-green-800">Mali Rapor</h4>
-                <p class="text-sm text-green-600">Gelir, gider ve karlılık</p>
-            </button>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <button onclick="showReport('patient', this)" class="report-btn bg-blue-50 border-2 border-blue-200 p-4 rounded-lg hover:bg-blue-100 transition-colors">
                 <i class="fas fa-user-injured text-blue-600 text-2xl mb-2"></i>
                 <h4 class="font-semibold text-blue-800">Hasta Raporu</h4>
@@ -51,78 +46,6 @@
             <button onclick="generateReport()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
                 <i class="fas fa-chart-bar mr-2"></i>Rapor Oluştur
             </button>
-        </div>
-    </div>
-
-    <!-- Mali Rapor -->
-    <div id="financial-report" class="report-section hidden">
-        <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <h3 class="text-xl font-bold text-gray-800 mb-6">Mali Rapor</h3>
-            
-            <!-- Mali Özet Kartları -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-lg text-white">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-green-100 text-sm">Toplam Gelir</p>
-                            <p class="text-2xl font-bold">₺125,450</p>
-                        </div>
-                        <i class="fas fa-arrow-up text-3xl text-green-200"></i>
-                    </div>
-                    <p class="text-green-100 text-sm mt-2">+12% geçen aya göre</p>
-                </div>
-                
-                <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-lg text-white">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-red-100 text-sm">Toplam Gider</p>
-                            <p class="text-2xl font-bold">₺45,230</p>
-                        </div>
-                        <i class="fas fa-arrow-down text-3xl text-red-200"></i>
-                    </div>
-                    <p class="text-red-100 text-sm mt-2">-5% geçen aya göre</p>
-                </div>
-                
-                <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-lg text-white">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-blue-100 text-sm">Net Kar</p>
-                            <p class="text-2xl font-bold">₺80,220</p>
-                        </div>
-                        <i class="fas fa-chart-line text-3xl text-blue-200"></i>
-                    </div>
-                    <p class="text-blue-100 text-sm mt-2">+18% geçen aya göre</p>
-                </div>
-                
-                <div class="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-lg text-white">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <p class="text-purple-100 text-sm">Kar Marjı</p>
-                            <p class="text-2xl font-bold">64%</p>
-                        </div>
-                        <i class="fas fa-percentage text-3xl text-purple-200"></i>
-                    </div>
-                    <p class="text-purple-100 text-sm mt-2">+3% geçen aya göre</p>
-                </div>
-            </div>
-
-            <!-- Aylık Gelir Grafiği -->
-            <div class="mb-8">
-                <h4 class="text-lg font-semibold text-gray-800 mb-4">Aylık Gelir Trendi</h4>
-                <canvas id="monthlyRevenueChart" width="400" height="200"></canvas>
-            </div>
-
-            <!-- Gelir Kaynakları -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4">Gelir Kaynakları</h4>
-                    <canvas id="revenueSourceChart" width="300" height="300"></canvas>
-                </div>
-                <div>
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4">Gider Dağılımı</h4>
-                    <canvas id="expenseDistributionChart" width="300" height="300"></canvas>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -344,7 +267,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-// Tarih ayarlama
+// Date setting
 function setCurrentDate() {
     const now = new Date();
     const today = now.toISOString().split('T')[0];
@@ -355,7 +278,7 @@ function setCurrentDate() {
     document.getElementById('current-date').textContent = now.toLocaleDateString('tr-TR');
 }
 
-// Tarih aralığı ayarlama
+// Date range setting
 function setDateRange(period) {
     const now = new Date();
     const endDate = now.toISOString().split('T')[0];
@@ -381,31 +304,25 @@ function setDateRange(period) {
     document.getElementById('end-date').value = endDate;
 }
 
-// Rapor gösterme
+// Show report
 function showReport(reportType, button) {
-    // Tüm raporları gizle
     document.querySelectorAll('.report-section').forEach(section => {
         section.classList.add('hidden');
     });
     
-    // Tüm butonları normal hale getir
     document.querySelectorAll('.report-btn').forEach(btn => {
         btn.classList.remove('ring-2', 'ring-blue-500');
     });
     
-    // Seçili raporu göster
     document.getElementById(reportType + '-report').classList.remove('hidden');
-    
-    // Seçili butonu vurgula
     button.classList.add('ring-2', 'ring-blue-500');
     
-    // Grafikleri yeniden çiz
     setTimeout(() => {
         initializeCharts(reportType);
     }, 100);
 }
 
-// Rapor oluşturma
+// Generate report
 function generateReport() {
     const startDate = document.getElementById('start-date').value;
     const endDate = document.getElementById('end-date').value;
@@ -415,10 +332,8 @@ function generateReport() {
         return;
     }
     
-    // Burada API çağrısı yapılabilir
     console.log('Rapor oluşturuluyor:', { startDate, endDate });
     
-    // Grafikleri güncelle
     const activeReport = document.querySelector('.report-section:not(.hidden)');
     if (activeReport) {
         const reportType = activeReport.id.replace('-report', '');
@@ -426,12 +341,9 @@ function generateReport() {
     }
 }
 
-// Grafik başlatma
+// Initialize charts
 function initializeCharts(reportType) {
     switch(reportType) {
-        case 'financial':
-            initializeFinancialCharts();
-            break;
         case 'patient':
             initializePatientCharts();
             break;
@@ -444,84 +356,8 @@ function initializeCharts(reportType) {
     }
 }
 
-// Mali rapor grafikleri
-function initializeFinancialCharts() {
-    // Aylık gelir grafiği
-    const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart');
-    if (monthlyRevenueCtx) {
-        new Chart(monthlyRevenueCtx, {
-            type: 'line',
-            data: {
-                labels: ['Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran'],
-                datasets: [{
-                    label: 'Gelir (₺)',
-                    data: [95000, 105000, 115000, 108000, 125000, 135000],
-                    borderColor: 'rgb(59, 130, 246)',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                    tension: 0.4
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-    
-    // Gelir kaynakları grafiği
-    const revenueSourceCtx = document.getElementById('revenueSourceChart');
-    if (revenueSourceCtx) {
-        new Chart(revenueSourceCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Operasyonlar', 'Konsültasyon', 'Kontrol', 'Diğer'],
-                datasets: [{
-                    data: [65, 20, 10, 5],
-                    backgroundColor: [
-                        'rgb(34, 197, 94)',
-                        'rgb(59, 130, 246)',
-                        'rgb(249, 115, 22)',
-                        'rgb(156, 163, 175)'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true
-            }
-        });
-    }
-    
-    // Gider dağılımı grafiği
-    const expenseDistributionCtx = document.getElementById('expenseDistributionChart');
-    if (expenseDistributionCtx) {
-        new Chart(expenseDistributionCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['Personel', 'Malzeme', 'Kira', 'Diğer'],
-                datasets: [{
-                    data: [45, 30, 15, 10],
-                    backgroundColor: [
-                        'rgb(239, 68, 68)',
-                        'rgb(245, 158, 11)',
-                        'rgb(139, 92, 246)',
-                        'rgb(156, 163, 175)'
-                    ]
-                }]
-            },
-            options: {
-                responsive: true
-            }
-        });
-    }
-}
-
-// Hasta raporu grafikleri
+// Patient report charts
 function initializePatientCharts() {
-    // Yaş dağılımı grafiği
     const ageDistributionCtx = document.getElementById('ageDistributionChart');
     if (ageDistributionCtx) {
         new Chart(ageDistributionCtx, {
@@ -545,7 +381,6 @@ function initializePatientCharts() {
         });
     }
     
-    // Cinsiyet dağılımı grafiği
     const genderDistributionCtx = document.getElementById('genderDistributionChart');
     if (genderDistributionCtx) {
         new Chart(genderDistributionCtx, {
@@ -567,9 +402,8 @@ function initializePatientCharts() {
     }
 }
 
-// Operasyon raporu grafikleri
+// Operation report charts
 function initializeOperationCharts() {
-    // Operasyon türü dağılımı
     const operationTypeCtx = document.getElementById('operationTypeChart');
     if (operationTypeCtx) {
         new Chart(operationTypeCtx, {
@@ -593,7 +427,6 @@ function initializeOperationCharts() {
         });
     }
     
-    // Aylık operasyon trendi
     const monthlyOperationCtx = document.getElementById('monthlyOperationChart');
     if (monthlyOperationCtx) {
         new Chart(monthlyOperationCtx, {
@@ -620,9 +453,8 @@ function initializeOperationCharts() {
     }
 }
 
-// Performans raporu grafikleri
+// Performance report charts
 function initializePerformanceCharts() {
-    // Aylık performans trendi
     const monthlyPerformanceCtx = document.getElementById('monthlyPerformanceChart');
     if (monthlyPerformanceCtx) {
         new Chart(monthlyPerformanceCtx, {
@@ -653,7 +485,6 @@ function initializePerformanceCharts() {
         });
     }
     
-    // Hasta memnuniyet skorları
     const satisfactionScoreCtx = document.getElementById('satisfactionScoreChart');
     if (satisfactionScoreCtx) {
         new Chart(satisfactionScoreCtx, {
@@ -679,14 +510,12 @@ function initializePerformanceCharts() {
     }
 }
 
-// Sayfa yüklendiğinde
+// On page load
 document.addEventListener('DOMContentLoaded', function() {
     setCurrentDate();
-    
-    // İlk raporu göster (mali rapor)
     const firstReportBtn = document.querySelector('.report-btn');
     if (firstReportBtn) {
-        showReport('financial', firstReportBtn);
+        showReport('patient', firstReportBtn);
     }
 });
 </script>

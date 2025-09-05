@@ -264,6 +264,8 @@
                         case '/':
                         case '/dashboard':
                             return 'dashboard';
+                        case '/clinic':
+                            return 'clinic';
                         case '/patients':
                             return 'patients';
                         case '/operations':
@@ -284,6 +286,7 @@
                 navigateTo(pageId) {
                     const map = {
                         'dashboard': '/',
+                        'clinic': '/clinic',
                         'patients': '/patients',
                         'operations': '/operations',
                         'settings': '/settings',

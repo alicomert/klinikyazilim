@@ -193,14 +193,16 @@ class OperationList extends Component
 
     public function getTodayOperationsProperty()
     {
-        return Operation::whereDate('process_date', Carbon::today())->count();
+        // Bugünkü kayıt dönemi için (registration_period'a göre)
+        $todayPeriod = $this->convertToTurkishMonth(Carbon::today()->format('Y-m'));
+        return Operation::where('registration_period', $todayPeriod)->count();
     }
 
     public function getThisMonthOperationsProperty()
     {
-        return Operation::whereMonth('process_date', Carbon::now()->month)
-                       ->whereYear('process_date', Carbon::now()->year)
-                       ->count();
+        // Bu ayın kayıt dönemi için (registration_period'a göre)
+        $currentPeriod = $this->convertToTurkishMonth(Carbon::now()->format('Y-m'));
+        return Operation::where('registration_period', $currentPeriod)->count();
     }
 
     public function getStatsProperty()
@@ -209,13 +211,12 @@ class OperationList extends Component
         $currentMonth = now()->month;
         $previousYear = $currentYear - 1;
         
-        // Bu yıl toplam operasyonlar
-        $thisYearOperations = Operation::whereYear('process_date', $currentYear)->count();
+        // Bu yıl toplam operasyonlar (registration_period'a göre)
+        $thisYearOperations = Operation::where('registration_period', 'like', '%' . $currentYear)->count();
         
-        // Bu ay operasyonlar
-        $thisMonthOperations = Operation::whereMonth('process_date', $currentMonth)
-                                        ->whereYear('process_date', $currentYear)
-                                        ->count();
+        // Bu ay operasyonlar (registration_period'a göre)
+        $currentPeriod = $this->convertToTurkishMonth(now()->format('Y-m'));
+        $thisMonthOperations = Operation::where('registration_period', $currentPeriod)->count();
         
         // Toplam operasyonlar
         $totalOperations = Operation::count();
@@ -223,12 +224,11 @@ class OperationList extends Component
         // Toplam hasta sayısı
         $totalPatients = \App\Models\Patient::count();
         
-        // Geçen yıl aynı dönem karşılaştırması
-        $previousYearSameMonth = Operation::whereMonth('process_date', $currentMonth)
-                                          ->whereYear('process_date', $previousYear)
-                                          ->count();
+        // Geçen yıl aynı dönem karşılaştırması (registration_period'a göre)
+        $previousYearSameMonthPeriod = $this->convertToTurkishMonth($previousYear . '-' . str_pad($currentMonth, 2, '0', STR_PAD_LEFT));
+        $previousYearSameMonth = Operation::where('registration_period', $previousYearSameMonthPeriod)->count();
         
-        $previousYearTotal = Operation::whereYear('process_date', $previousYear)->count();
+        $previousYearTotal = Operation::where('registration_period', 'like', '%' . $previousYear)->count();
         
         // Yüzde hesaplamaları
         $monthlyPercentageChange = 0;
@@ -749,29 +749,28 @@ class OperationList extends Component
         switch ($period) {
             case 'monthly':
                 $month = $isPrevious ? now()->subMonth() : now();
-                $query->whereMonth('process_date', $month->month)
-                      ->whereYear('process_date', $month->year);
+                $targetPeriod = $this->convertToTurkishMonth($month->format('Y-m'));
+                $query->where('registration_period', $targetPeriod);
                 break;
                 
             case 'yearly':
-                $year = $isPrevious ? now()->subYear() : now();
-                $query->whereYear('process_date', $year->year);
+                $year = $isPrevious ? now()->subYear()->year : now()->year;
+                $query->where('registration_period', 'like', '%' . $year);
                 break;
                 
             case 'this_year':
-                if ($isPrevious) {
-                    $query->whereYear('process_date', now()->subYear()->year);
-                } else {
-                    $query->whereYear('process_date', now()->year);
-                }
+                $year = $isPrevious ? now()->subYear()->year : now()->year;
+                $query->where('registration_period', 'like', '%' . $year);
                 break;
                 
             case 'all':
                 if ($isPrevious) {
                     // Tümü için önceki ay karşılaştırması
-                    $query->where('process_date', '<', now()->startOfMonth());
+                    $previousMonth = now()->subMonth();
+                    $targetPeriod = $this->convertToTurkishMonth($previousMonth->format('Y-m'));
+                    $query->where('registration_period', '<', $targetPeriod);
                 } else {
-                    // Tüm veriler
+                    // Tüm veriler - herhangi bir filtreleme yok
                 }
                 break;
         }
