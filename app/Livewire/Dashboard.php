@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\Operation;
 use App\Models\Patient;
 use App\Models\Activity;
+use App\Models\Appointment;
 use Carbon\Carbon;
 
 class Dashboard extends Component
@@ -123,6 +124,67 @@ class Dashboard extends Component
         $year = $parts[1];
         
         return $months[$month] . ' ' . $year;
+    }
+
+    public function getTodayAppointmentsProperty()
+    {
+        $today = Carbon::today();
+        
+        return Appointment::with('patient')
+            ->where('appointment_date', '>=', $today)
+            ->where('status', '!=', 'cancelled')
+            ->orderBy('appointment_date')
+            ->orderBy('appointment_time')
+            ->take(4)
+            ->get()
+            ->map(function ($appointment) {
+                return [
+                    'id' => $appointment->id,
+                    'time' => Carbon::parse($appointment->appointment_time)->format('H:i'),
+                    'patient_name' => $appointment->patient_name ?: ($appointment->patient ? $appointment->patient->first_name . ' ' . $appointment->patient->last_name : 'Bilinmeyen'),
+                    'appointment_type' => $appointment->appointment_type,
+                    'appointment_type_text' => $this->getAppointmentTypeText($appointment->appointment_type),
+                    'status' => $appointment->status,
+                    'color' => $this->getAppointmentTypeColor($appointment->appointment_type),
+                    'bg_color' => $this->getAppointmentTypeBgColor($appointment->appointment_type)
+                ];
+            });
+    }
+    
+    private function getAppointmentTypeText($type)
+    {
+        return match($type) {
+            'consultation' => 'Konsültasyon',
+            'operation' => 'Operasyon',
+            'control' => 'Kontrol',
+            'botox' => 'Botoks',
+            'filler' => 'Dolgu',
+            default => 'Muayene'
+        };
+    }
+    
+    private function getAppointmentTypeColor($type)
+    {
+        return match($type) {
+            'consultation' => 'green',
+            'operation' => 'red',
+            'control' => 'blue',
+            'botox' => 'purple',
+            'filler' => 'yellow',
+            default => 'gray'
+        };
+    }
+    
+    private function getAppointmentTypeBgColor($type)
+    {
+        return match($type) {
+            'consultation' => 'green-50',
+            'operation' => 'red-50',
+            'control' => 'blue-50',
+            'botox' => 'purple-50',
+            'filler' => 'yellow-50',
+            default => 'gray-50'
+        };
     }
 
     public function getRecentActivitiesProperty()

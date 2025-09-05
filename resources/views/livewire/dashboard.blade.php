@@ -124,42 +124,38 @@
         <!-- Today's Schedule -->
         <div class="flex-1 bg-white rounded-lg shadow-sm p-6 card-shadow">
             <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold text-gray-800">Bugünkü Program</h3>
+                <h3 class="text-lg font-semibold text-gray-800">Yaklaşan Randevular</h3>
                 <a href="{{ route('clinic') }}" class="text-blue-600 text-sm hover:underline">Tümünü Gör</a>
             </div>
             <div class="space-y-4">
-                <div class="flex items-center space-x-4 p-3 bg-blue-50 rounded-lg">
-                    <div class="text-blue-600 font-semibold">09:00</div>
-                    <div class="flex-1">
-                        <div class="font-medium">Meltem Karaca</div>
-                        <div class="text-sm text-gray-500">Burun Estetiği Kontrol</div>
+                @forelse($this->todayAppointments as $appointment)
+                    <div class="flex items-center space-x-4 p-3 bg-{{ $appointment['bg_color'] }} rounded-lg">
+                        <div class="text-{{ $appointment['color'] }}-600 font-semibold">{{ $appointment['time'] }}</div>
+                        <div class="flex-1">
+                            <div class="font-medium">{{ $appointment['patient_name'] }}</div>
+                            <div class="text-sm text-gray-500">{{ $appointment['appointment_type_text'] }}</div>
+                        </div>
+                        <div class="bg-{{ $appointment['color'] }}-100 text-{{ $appointment['color'] }}-800 px-2 py-1 rounded text-xs">
+                            {{ $appointment['appointment_type_text'] }}
+                        </div>
+                        @if($appointment['status'] === 'completed')
+                            <div class="text-green-600 text-sm">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                        @elseif($appointment['status'] === 'no_show')
+                            <div class="text-red-600 text-sm">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                        @endif
                     </div>
-                    <div class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Kontrol</div>
-                </div>
-                <div class="flex items-center space-x-4 p-3 bg-green-50 rounded-lg">
-                    <div class="text-green-600 font-semibold">10:30</div>
-                    <div class="flex-1">
-                        <div class="font-medium">Ayşe Demir</div>
-                        <div class="text-sm text-gray-500">Yüz Germe Operasyonu</div>
+                @empty
+                    <div class="text-center py-8">
+                        <div class="text-gray-400 mb-2">
+                            <i class="fas fa-calendar-day text-3xl"></i>
+                        </div>
+                        <p class="text-gray-500">Yaklaşan randevu bulunmuyor.</p>
                     </div>
-                    <div class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">Operasyon</div>
-                </div>
-                <div class="flex items-center space-x-4 p-3 bg-purple-50 rounded-lg">
-                    <div class="text-purple-600 font-semibold">14:00</div>
-                    <div class="flex-1">
-                        <div class="font-medium">Mehmet Özkan</div>
-                        <div class="text-sm text-gray-500">Botoks Uygulaması</div>
-                    </div>
-                    <div class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">Estetik</div>
-                </div>
-                <div class="flex items-center space-x-4 p-3 bg-yellow-50 rounded-lg">
-                    <div class="text-yellow-600 font-semibold">16:00</div>
-                    <div class="flex-1">
-                        <div class="font-medium">Zeynep Yılmaz</div>
-                        <div class="text-sm text-gray-500">İlk Muayene</div>
-                    </div>
-                    <div class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">Muayene</div>
-                </div>
+                @endforelse
             </div>
         </div>
     </div>
