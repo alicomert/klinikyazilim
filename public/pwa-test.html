@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0c3779">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="KlinikGo">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#0c3779">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <title>PWA Test - KlinikGo</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="/klinikgo.png">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/klinikgo.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/klinikgo.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/klinikgo.png">
+    <link rel="apple-touch-icon" sizes="167x167" href="/klinikgo.png">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #0c3779 0%, #1e5799 50%, #2989d8 100%);
+        }
+        
+        .card-shadow {
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .install-btn {
+            background: linear-gradient(45deg, #0c3779, #2989d8);
+            transition: all 0.3s ease;
+        }
+        
+        .install-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(12, 55, 121, 0.3);
+        }
+        
+        .feature-card {
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="gradient-bg text-white py-6">
+        <div class="container mx-auto px-4">
+            <div class="flex items-center justify-center">
+                <div class="bg-white rounded-lg p-3 mr-4">
+                    <img src="/klinikgo.png" alt="KlinikGo Logo" class="h-12 w-auto">
+                </div>
+                <div>
+                    <h1 class="text-3xl font-bold">KlinikGo PWA Test</h1>
+                    <p class="text-blue-100">Progressive Web App Test Sayfası</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- PWA Status Card -->
+        <div class="bg-white rounded-lg card-shadow p-6 mb-8">
+            <div class="text-center">
+                <div class="mb-4">
+                    <i class="fas fa-mobile-alt text-4xl text-blue-600 pulse-animation"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">PWA Durumu</h2>
+                <div id="pwa-status" class="text-lg mb-4">
+                    <span class="text-yellow-600">
+                        <i class="fas fa-spinner fa-spin mr-2"></i>
+                        PWA durumu kontrol ediliyor...
+                    </span>
+                </div>
+                
+                <!-- Install Button -->
+                <button id="install-btn" class="install-btn text-white px-8 py-3 rounded-lg font-semibold text-lg hidden">
+                    <i class="fas fa-download mr-2"></i>
+                    KlinikGo'yu Yükle
+                </button>
+                
+                <!-- Already Installed Message -->
+                <div id="installed-msg" class="hidden">
+                    <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
+                        <i class="fas fa-check-circle mr-2"></i>
+                        KlinikGo zaten yüklü!
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Grid -->
+        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Service Worker Status -->
+            <div class="bg-white rounded-lg card-shadow p-6 feature-card">
+                <div class="text-center">
+                    <i class="fas fa-cogs text-3xl text-blue-600 mb-3"></i>
+                    <h3 class="text-xl font-semibold mb-2">Service Worker</h3>
+                    <div id="sw-status" class="text-sm">
+                        <span class="text-yellow-600">Kontrol ediliyor...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Manifest Status -->
+            <div class="bg-white rounded-lg card-shadow p-6 feature-card">
+                <div class="text-center">
+                    <i class="fas fa-file-code text-3xl text-green-600 mb-3"></i>
+                    <h3 class="text-xl font-semibold mb-2">Manifest</h3>
+                    <div id="manifest-status" class="text-sm">
+                        <span class="text-yellow-600">Kontrol ediliyor...</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Network Status -->
+            <div class="bg-white rounded-lg card-shadow p-6 feature-card">
+                <div class="text-center">
+                    <i class="fas fa-wifi text-3xl text-purple-600 mb-3"></i>
+                    <h3 class="text-xl font-semibold mb-2">Ağ Durumu</h3>
+                    <div id="network-status-display" class="text-sm">
+                        <span class="text-green-600">
+                            <i class="fas fa-check mr-1"></i>
+                            Çevrimiçi
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Test Actions -->
+        <div class="bg-white rounded-lg card-shadow p-6">
+            <h3 class="text-xl font-semibold mb-4 text-center">PWA Test İşlemleri</h3>
+            <div class="grid md:grid-cols-2 gap-4">
+                <button onclick="testOffline()" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-wifi-slash mr-2"></i>
+                    Offline Modu Test Et
+                </button>
+                
+                <button onclick="testNotification()" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-bell mr-2"></i>
+                    Bildirim Test Et
+                </button>
+                
+                <button onclick="clearCache()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-trash mr-2"></i>
+                    Cache Temizle
+                </button>
+                
+                <button onclick="refreshApp()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Uygulamayı Yenile
+                </button>
+            </div>
+        </div>
+
+        <!-- Info Section -->
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-8">
+            <h3 class="text-lg font-semibold text-blue-800 mb-3">
+                <i class="fas fa-info-circle mr-2"></i>
+                PWA Test Bilgileri
+            </h3>
+            <ul class="text-blue-700 space-y-2">
+                <li><i class="fas fa-check mr-2"></i> Bu sayfa PWA özelliklerini test etmek için oluşturulmuştur</li>
+                <li><i class="fas fa-check mr-2"></i> Mobil cihazlarda "Ana ekrana ekle" seçeneği görünmelidir</li>
+                <li><i class="fas fa-check mr-2"></i> Offline modda çalışabilmelidir</li>
+                <li><i class="fas fa-check mr-2"></i> Service Worker ve Manifest dosyaları aktif olmalıdır</li>
+            </ul>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-12">
+        <div class="container mx-auto px-4 text-center">
+            <p>&copy; 2024 KlinikGo - Klinik Yönetim Sistemi</p>
+            <p class="text-gray-400 text-sm mt-2">Progressive Web App Test Sayfası</p>
+        </div>
+    </footer>
+
+    <!-- PWA JavaScript -->
+    <script src="/pwa.js"></script>
+    
+    <script>
+        // PWA variables are already defined in pwa.js, so we don't redeclare them
+        
+        // PWA Status Check
+        function checkPWAStatus() {
+            const statusEl = document.getElementById('pwa-status');
+            const installBtn = document.getElementById('install-btn');
+            const installedMsg = document.getElementById('installed-msg');
+            
+            // Check if running as PWA
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isInStandaloneMode = isIOS && window.navigator.standalone;
+            
+            if (isStandalone || isInStandaloneMode) {
+                statusEl.innerHTML = '<span class="text-green-600"><i class="fas fa-check-circle mr-2"></i>PWA olarak çalışıyor</span>';
+                installedMsg.classList.remove('hidden');
+            } else {
+                statusEl.innerHTML = '<span class="text-blue-600"><i class="fas fa-globe mr-2"></i>Tarayıcıda çalışıyor</span>';
+                installBtn.classList.remove('hidden');
+            }
+        }
+        
+        // Service Worker Status
+        function checkServiceWorker() {
+            const swStatus = document.getElementById('sw-status');
+            
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(registration => {
+                    if (registration) {
+                        swStatus.innerHTML = '<span class="text-green-600"><i class="fas fa-check mr-1"></i>Aktif</span>';
+                    } else {
+                        swStatus.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Kayıtlı değil</span>';
+                    }
+                });
+            } else {
+                swStatus.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Desteklenmiyor</span>';
+            }
+        }
+        
+        // Manifest Status
+        function checkManifest() {
+            const manifestStatus = document.getElementById('manifest-status');
+            
+            fetch('/manifest.json')
+                .then(response => {
+                    if (response.ok) {
+                        manifestStatus.innerHTML = '<span class="text-green-600"><i class="fas fa-check mr-1"></i>Yüklendi</span>';
+                    } else {
+                        manifestStatus.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Bulunamadı</span>';
+                    }
+                })
+                .catch(() => {
+                    manifestStatus.innerHTML = '<span class="text-red-600"><i class="fas fa-times mr-1"></i>Hata</span>';
+                });
+        }
+        
+        // Network Status
+        function updateNetworkStatus() {
+            const networkStatus = document.getElementById('network-status-display');
+            
+            if (navigator.onLine) {
+                networkStatus.innerHTML = '<span class="text-green-600"><i class="fas fa-wifi mr-1"></i>Çevrimiçi</span>';
+            } else {
+                networkStatus.innerHTML = '<span class="text-red-600"><i class="fas fa-wifi-slash mr-1"></i>Çevrimdışı</span>';
+            }
+        }
+        
+        // Test Functions
+        function testOffline() {
+            window.location.href = '/offline.html';
+        }
+        
+        function testNotification() {
+            if ('Notification' in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        new Notification('KlinikGo PWA Test', {
+                            body: 'Bildirim sistemi çalışıyor!',
+                            icon: '/klinikgo.png'
+                        });
+                    } else {
+                        alert('Bildirim izni verilmedi.');
+                    }
+                });
+            } else {
+                alert('Bu tarayıcı bildirimleri desteklemiyor.');
+            }
+        }
+        
+        function clearCache() {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                    alert('Cache temizlendi!');
+                });
+            } else {
+                alert('Cache API desteklenmiyor.');
+            }
+        }
+        
+        function refreshApp() {
+            window.location.reload();
+        }
+        
+        // Install Button Handler
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            const installBtn = document.getElementById('install-btn');
+            installBtn.addEventListener('click', () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') {
+                            console.log('PWA yüklendi');
+                        }
+                        deferredPrompt = null;
+                    });
+                }
+            });
+        });
+        
+        // Network Event Listeners
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            checkPWAStatus();
+            checkServiceWorker();
+            checkManifest();
+            updateNetworkStatus();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Çevrimdışı - KlinikGo</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+        
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 90%;
+            margin: 2rem;
+        }
+        
+        .logo {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 2rem;
+            background: #1e40af;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .logo::before {
+            content: '🏥';
+            font-size: 2.5rem;
+        }
+        
+        .offline-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 1.5rem;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        h1 {
+            color: #1e40af;
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            color: #6b7280;
+            font-size: 1.1rem;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+        
+        .features {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            text-align: left;
+        }
+        
+        .features h3 {
+            color: #1e40af;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        
+        .feature-list {
+            list-style: none;
+        }
+        
+        .feature-list li {
+            padding: 0.5rem 0;
+            color: #4b5563;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: bold;
+            margin-right: 0.75rem;
+            font-size: 1.1rem;
+        }
+        
+        .retry-btn {
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+        
+        .retry-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(30, 64, 175, 0.3);
+        }
+        
+        .retry-btn:active {
+            transform: translateY(0);
+        }
+        
+        .connection-status {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .offline {
+            background: #fef2f2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+        
+        .online {
+            background: #f0fdf4;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .footer {
+            margin-top: 2rem;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 640px) {
+            .offline-container {
+                padding: 2rem 1.5rem;
+            }
+            
+            h1 {
+                font-size: 1.5rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="logo"></div>
+        
+        <div class="offline-icon pulse">📡</div>
+        
+        <h1>İnternet Bağlantısı Yok</h1>
+        
+        <p class="subtitle">
+            Şu anda çevrimdışısınız. KlinikGo uygulaması internet bağlantısı olmadan da bazı özelliklerini kullanmanıza olanak sağlar.
+        </p>
+        
+        <div class="features">
+            <h3>Çevrimdışı Özellikler</h3>
+            <ul class="feature-list">
+                <li>Önbelleğe alınmış hasta bilgilerini görüntüleme</li>
+                <li>Kaydedilmiş randevu listelerini inceleme</li>
+                <li>Operasyon geçmişini görüntüleme</li>
+                <li>Notları okuma ve düzenleme</li>
+                <li>Bağlantı kurulduğunda otomatik senkronizasyon</li>
+            </ul>
+        </div>
+        
+        <button class="retry-btn" onclick="checkConnection()">
+            🔄 Bağlantıyı Kontrol Et
+        </button>
+        
+        <div id="connectionStatus" class="connection-status offline">
+            ❌ Çevrimdışı - İnternet bağlantısı bulunamadı
+        </div>
+        
+        <div class="footer">
+            KlinikGo v1.0.0 - Profesyonel Klinik Yönetim Sistemi
+        </div>
+    </div>
+    
+    <script>
+        // Bağlantı durumunu kontrol et
+        function updateConnectionStatus() {
+            const statusElement = document.getElementById('connectionStatus');
+            
+            if (navigator.onLine) {
+                statusElement.className = 'connection-status online';
+                statusElement.innerHTML = '✅ Çevrimiçi - İnternet bağlantısı mevcut';
+                
+                // 2 saniye sonra ana sayfaya yönlendir
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                statusElement.className = 'connection-status offline';
+                statusElement.innerHTML = '❌ Çevrimdışı - İnternet bağlantısı bulunamadı';
+            }
+        }
+        
+        // Bağlantıyı manuel kontrol et
+        function checkConnection() {
+            const button = document.querySelector('.retry-btn');
+            button.innerHTML = '🔄 Kontrol ediliyor...';
+            button.disabled = true;
+            
+            // Gerçek bir network isteği yap
+            fetch('/manifest.json', { 
+                method: 'HEAD',
+                cache: 'no-cache'
+            })
+            .then(() => {
+                updateConnectionStatus();
+            })
+            .catch(() => {
+                updateConnectionStatus();
+            })
+            .finally(() => {
+                setTimeout(() => {
+                    button.innerHTML = '🔄 Bağlantıyı Kontrol Et';
+                    button.disabled = false;
+                }, 1000);
+            });
+        }
+        
+        // Sayfa yüklendiğinde bağlantı durumunu kontrol et
+        updateConnectionStatus();
+        
+        // Online/offline event listener'ları
+        window.addEventListener('online', updateConnectionStatus);
+        window.addEventListener('offline', updateConnectionStatus);
+        
+        // Periyodik bağlantı kontrolü (30 saniyede bir)
+        setInterval(() => {
+            if (!navigator.onLine) {
+                fetch('/manifest.json', { 
+                    method: 'HEAD',
+                    cache: 'no-cache'
+                })
+                .then(() => {
+                    if (!navigator.onLine) {
+                        // Browser offline diyor ama network var, güncelle
+                        updateConnectionStatus();
+                    }
+                })
+                .catch(() => {
+                    // Gerçekten offline
+                });
+            }
+        }, 30000);
+        
+        // Service Worker mesajları
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.addEventListener('message', event => {
+                if (event.data && event.data.type === 'CACHE_UPDATED') {
+                    console.log('Cache güncellendi, sayfa yenileniyor...');
+                    window.location.reload();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

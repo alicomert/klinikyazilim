@@ -7,6 +7,26 @@
 
     <title>{{ config('app.name', 'EstetikLine') }} - @yield('title', 'Dashboard')</title>
 
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#0c3779">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="KlinikGo">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="msapplication-TileColor" content="#0c3779">
+    <meta name="msapplication-tap-highlight" content="no">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ asset('manifest.json') }}">
+    
+    <!-- PWA Icons -->
+    <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('klinikgo.png') }}">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('klinikgo.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ asset('klinikgo.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('klinikgo.png') }}">
+    <link rel="apple-touch-icon" sizes="167x167" href="{{ asset('klinikgo.png') }}">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -541,5 +561,8 @@
             }
         }
     </script>
+    
+    <!-- PWA JavaScript -->
+    <script src="{{ asset('pwa.js') }}"></script>
 </body>
 </html>
