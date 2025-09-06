@@ -62,9 +62,9 @@
     </div>
 
     <!-- Charts Section -->
-    <div class="flex gap-6 mb-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         <!-- Monthly Operation Trend -->
-        <div class="flex-1 bg-white rounded-lg shadow-sm p-6 card-shadow">
+        <div class="bg-white rounded-lg shadow-sm p-6 card-shadow">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">Aylık Operasyon Trendi</h3>
                 <select wire:model.live="operationTrendPeriod" class="text-sm border rounded-lg px-3 py-1">
@@ -72,13 +72,13 @@
                     <option value="12months">Son 12 Ay</option>
                 </select>
             </div>
-            <div class="chart-container">
+            <div class="chart-container h-64">
                 <canvas id="dashboardOperationTrendChart"></canvas>
             </div>
         </div>
 
         <!-- Procedure Distribution -->
-        <div class="flex-1 bg-white rounded-lg shadow-sm p-6 card-shadow">
+        <div class="bg-white rounded-lg shadow-sm p-6 card-shadow">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">Prosedür Dağılımı</h3>
                 <select wire:model.live="procedurePeriod" class="text-sm border rounded-lg px-3 py-1">
@@ -86,15 +86,15 @@
                     <option value="last_3_months">Son 3 Ay</option>
                 </select>
             </div>
-            <div class="chart-container">
+            <div class="chart-container h-64">
                 <canvas id="dashboardProcedureChart"></canvas>
             </div>
         </div>
     </div>
 
-    <div class="flex gap-6">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Recent Activities Section -->
-        <div class="flex-1 bg-white rounded-lg shadow-sm p-6 card-shadow">
+        <div class="bg-white rounded-lg shadow-sm p-6 card-shadow">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">Son Aktiviteler</h3>
             </div>
@@ -122,7 +122,7 @@
         </div>
 
         <!-- Today's Schedule -->
-        <div class="flex-1 bg-white rounded-lg shadow-sm p-6 card-shadow">
+        <div class="bg-white rounded-lg shadow-sm p-6 card-shadow">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">Yaklaşan Randevular</h3>
                 <a href="{{ route('clinic') }}" class="text-blue-600 text-sm hover:underline">Tümünü Gör</a>
