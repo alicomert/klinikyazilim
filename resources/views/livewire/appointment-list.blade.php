@@ -363,6 +363,9 @@
                                         <button wire:click="editAppointment({{ $appointment->id }})" class="text-blue-600 hover:text-blue-900" title="Düzenle">
                                             <i class="fas fa-edit"></i>
                                         </button>
+                                        <button wire:click="showNotes({{ $appointment->id }})" class="text-green-600 hover:text-green-900" title="Notlar">
+                                            <i class="fas fa-sticky-note"></i>
+                                        </button>
                                         <button wire:click="confirmDelete({{ $appointment->id }})" 
                                                 class="text-red-600 hover:text-red-900" title="Sil">
                                             <i class="fas fa-trash"></i>
@@ -477,8 +480,8 @@
                                     @error('patient_name') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">Telefon *</label>
-                                    <input wire:model="patient_phone" type="text" class="w-full border rounded-lg px-3 py-2" required>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Telefon</label>
+                                    <input wire:model="patient_phone" type="text" class="w-full border rounded-lg px-3 py-2">
                                     @error('patient_phone') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
                                 </div>
                             @else
@@ -598,6 +601,171 @@
         </div>
     @endif
     
+    <!-- Notes Modal -->
+    @if($showNotesModal && $selectedAppointmentForNotes)
+        <div class="fixed inset-0 bg-black bg-opacity-60 h-full w-full z-50 flex items-center justify-center p-4" wire:click="closeNotesModal">
+            <div class="relative w-full max-w-6xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col" wire:click.stop>
+                <!-- Modal Header -->
+                <div class="bg-gradient-to-r from-purple-600 to-purple-700 px-8 py-6 rounded-t-2xl flex-shrink-0">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="bg-white bg-opacity-20 p-3 rounded-full">
+                                <i class="fas fa-sticky-note text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-2xl font-bold text-white">{{ $selectedAppointmentForNotes->patient_display_name }} - Randevu Notları</h3>
+                                <div class="flex items-center space-x-4 text-sm text-purple-100">
+                                    <span class="flex items-center"><i class="fas fa-calendar mr-2"></i>{{ $selectedAppointmentForNotes->appointment_date->format('d.m.Y') }} {{ $selectedAppointmentForNotes->appointment_time->format('H:i') }}</span>
+                                    <span class="flex items-center"><i class="fas fa-stethoscope mr-2"></i>{{ $this->getAppointmentTypeText($selectedAppointmentForNotes->appointment_type) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button wire:click="closeNotesModal" class="text-white hover:text-purple-200 transition-colors duration-200 p-2 rounded-full hover:bg-white hover:bg-opacity-10">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Modal Content -->
+                <div class="flex-1 overflow-hidden flex">
+                    <!-- Notes List -->
+                    <div class="flex-1 p-6 overflow-y-auto">
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                            @forelse($appointmentNotes as $note)
+                                <div class="relative bg-gradient-to-br bg-yellow-100 text-yellow-800 border-yellow-200 p-4 rounded-lg shadow-md transform rotate-1 hover:rotate-0 transition-transform duration-200 border-l-4">
+                                    <!-- Post-it Header -->
+                                    <div class="flex items-start justify-between mb-3">
+                                        <div class="flex items-center space-x-2">
+                                            <i class="{{ $this->getNoteTypeIcon($note->note_type) }} text-sm"></i>
+                                         <span class="text-xs font-medium uppercase tracking-wide">{{ $this->getNoteTypeText($note->note_type) }}</span>
+                                            @if($note->is_private)
+                                                <i class="fas fa-lock text-xs" title="Özel Not"></i>
+                                            @endif
+                                        </div>
+                                        <div class="flex items-center space-x-1">
+                                            @if($this->canEditNote($note))
+                                                <button wire:click="editNote({{ $note->id }})" class="text-gray-600 hover:text-gray-800 p-1 rounded" title="Düzenle">
+                                                    <i class="fas fa-edit text-xs"></i>
+                                                </button>
+                                                <button wire:click="deleteNote({{ $note->id }})" class="text-red-600 hover:text-red-800 p-1 rounded" title="Sil">
+                                                    <i class="fas fa-trash text-xs"></i>
+                                                </button>
+                                            @else
+                                                <div class="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded" title="Sadece doktor düzenleyebilir">
+                                                    <i class="fas fa-lock"></i>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Note Content -->
+                                    <p class="text-sm mb-3 line-clamp-4">{{ $note->content }}</p>
+                                    
+                                    <!-- Note Footer -->
+                                    <div class="text-xs text-gray-600 space-y-1">
+                                        <div class="flex items-center justify-between">
+                                            <span class="flex items-center">
+                                                <i class="fas fa-user mr-1"></i>
+                                                {{ $note->user->name }}
+                                                @if($note->user->role === 'doctor')
+                                                    <span class="ml-1 text-blue-600 font-medium">(Dr.)</span>
+                                                @endif
+                                            </span>
+                                            <span class="flex items-center">
+                                                <i class="fas fa-calendar mr-1"></i>
+                                                {{ $note->created_at->format('d.m.Y') }}
+                                            </span>
+                                        </div>
+                                        @if($note->last_updated && $note->last_updated != $note->created_at)
+                                            <div class="text-xs text-gray-500">
+                                                <i class="fas fa-edit mr-1"></i>
+                                                Güncellendi: {{ $note->last_updated->format('d.m.Y H:i') }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                    
+                                    @if($note->user->role === 'doctor' && !$this->canEditNote($note))
+                                        <div class="absolute top-2 right-2 bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                                            <i class="fas fa-user-md mr-1"></i>Doktor Notu
+                                        </div>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="col-span-full text-center py-12">
+                                    <i class="fas fa-sticky-note text-4xl text-gray-300 mb-4"></i>
+                                    <p class="text-gray-500 text-lg">Henüz not bulunmuyor</p>
+                                    <p class="text-gray-400 text-sm">İlk notu eklemek için sağdaki formu kullanın.</p>
+                                </div>
+                            @endforelse
+                        </div>
+                    </div>
+                    
+                    <!-- Note Form -->
+                    <div class="w-80 bg-gray-50 border-l border-gray-200 p-6 overflow-y-auto">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">
+                            @if($editingNote)
+                                <i class="fas fa-edit mr-2"></i>Not Düzenle
+                            @else
+                                <i class="fas fa-plus mr-2"></i>Yeni Not Ekle
+                            @endif
+                        </h4>
+                        
+                        <form wire:submit.prevent="saveNote" class="space-y-4">
+                            <!-- Note Type -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">Not Türü</label>
+                                <select wire:model="newNote.note_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <option value="general">Genel</option>
+                                    <option value="medical">Tıbbi</option>
+                                    <option value="appointment">Randevu</option>
+                                    <option value="treatment">Tedavi</option>
+                                </select>
+                            </div>
+                            
+                            <!-- Content -->
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">İçerik</label>
+                                <textarea wire:model="newNote.content" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" placeholder="Not içeriği"></textarea>
+                                @error('newNote.content') <span class="text-red-500 text-xs">{{ $message }}</span> @enderror
+                            </div>
+                            
+                            <!-- Private Note (For Doctors and their staff) -->
+                            @if(Auth::user()->role === 'doctor' || Auth::user()->doctor_id)
+                            <div class="flex items-center">
+                                <input type="checkbox" wire:model="newNote.is_private" id="is_private" class="rounded border-gray-300 text-purple-600 shadow-sm focus:border-purple-300 focus:ring focus:ring-purple-200 focus:ring-opacity-50">
+                                <label for="is_private" class="ml-2 text-sm text-gray-700">
+                                    @if(Auth::user()->role === 'doctor')
+                                        Özel not (sadece ben görebilirim)
+                                    @else
+                                        Özel not (sadece doktor görebilir)
+                                    @endif
+                                </label>
+                            </div>
+                            @endif
+                            
+                            <!-- Buttons -->
+                            <div class="flex space-x-2">
+                                <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200">
+                                    @if($editingNote)
+                                        <i class="fas fa-save mr-2"></i>Güncelle
+                                    @else
+                                        <i class="fas fa-plus mr-2"></i>Ekle
+                                    @endif
+                                </button>
+                                @if($editingNote)
+                                    <button type="button" wire:click="resetNoteForm" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors duration-200">
+                                        <i class="fas fa-times mr-2"></i>İptal
+                                    </button>
+                                @endif
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Delete Confirmation Modal -->
     @if($showDeleteModal)
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">

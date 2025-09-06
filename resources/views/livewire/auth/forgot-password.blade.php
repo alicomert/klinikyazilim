@@ -23,7 +23,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Forgot password')" :description="__('Enter your email to receive a password reset link')" />
+    <x-auth-header :title="'Şifrenizi mi Unuttunuz?'" :description="'E-posta adresinizi girin, şifre sıfırlama bağlantısı gönderelim'" />
 
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
@@ -32,18 +32,18 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <!-- Email Address -->
         <flux:input
             wire:model="email"
-            :label="__('Email Address')"
+            :label="'E-posta Adresi'"
             type="email"
             required
             autofocus
             placeholder="email@example.com"
         />
 
-        <flux:button variant="primary" type="submit" class="w-full">{{ __('Email password reset link') }}</flux:button>
+        <button type="submit" class="w-full bg-white text-[#1e40af] hover:bg-[#1e40af] hover:text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-white/30 border-2 border-white">Şifre Sıfırlama Bağlantısı Gönder</button>
     </form>
 
-    <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-400">
-        <span>{{ __('Or, return to') }}</span>
-        <flux:link :href="route('login')" wire:navigate>{{ __('log in') }}</flux:link>
+    <div class="text-center text-sm text-gray-700">
+        <span>Veya</span>
+        <a href="{{ route('login') }}" class="ml-1 text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200 underline" wire:navigate>giriş yapın</a>
     </div>
 </div>

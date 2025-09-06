@@ -67,13 +67,13 @@
         <div class="flex-1 bg-white rounded-lg shadow-sm p-6 card-shadow">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">Aylık Operasyon Trendi</h3>
-                <select class="text-sm border rounded-lg px-3 py-1">
-                    <option>Son 6 Ay</option>
-                    <option>Son 12 Ay</option>
+                <select wire:model.live="operationTrendPeriod" class="text-sm border rounded-lg px-3 py-1">
+                    <option value="6months">Son 6 Ay</option>
+                    <option value="12months">Son 12 Ay</option>
                 </select>
             </div>
             <div class="chart-container">
-                <canvas id="operationTrendChart"></canvas>
+                <canvas id="dashboardOperationTrendChart"></canvas>
             </div>
         </div>
 
@@ -81,13 +81,13 @@
         <div class="flex-1 bg-white rounded-lg shadow-sm p-6 card-shadow">
             <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-gray-800">Prosedür Dağılımı</h3>
-                <select class="text-sm border rounded-lg px-3 py-1">
-                    <option>Bu Ay</option>
-                    <option>Son 3 Ay</option>
+                <select wire:model.live="procedurePeriod" class="text-sm border rounded-lg px-3 py-1">
+                    <option value="current_month">Bu Ay</option>
+                    <option value="last_3_months">Son 3 Ay</option>
                 </select>
             </div>
             <div class="chart-container">
-                <canvas id="procedureChart"></canvas>
+                <canvas id="dashboardProcedureChart"></canvas>
             </div>
         </div>
     </div>
@@ -160,36 +160,71 @@
         </div>
     </div>
     <script>
-        let operationChart = null;
-        let procedureChart = null;
+        // Global değişkenleri window objesinde kontrol et
+        if (typeof window.dashboardOperationChart === 'undefined') {
+            window.dashboardOperationChart = null;
+        }
+        if (typeof window.dashboardProcedureChart === 'undefined') {
+            window.dashboardProcedureChart = null;
+        }
         
+        // Livewire navigasyon event'lerini dinle
         document.addEventListener('livewire:navigated', function() {
-            setTimeout(() => {
-                initializeCharts();
-            }, 100);
+            setTimeout(function() {
+                initializeDashboardCharts();
+            }, 2000);
+        });
+        
+        document.addEventListener('livewire:load', function() {
+            setTimeout(function() {
+                initializeDashboardCharts();
+            }, 2000);
         });
         
         document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                initializeCharts();
+            initializeDashboardCharts();
+        });
+        
+        // Sayfa görünürlük değişikliklerini dinle
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden) {
+                setTimeout(function() {
+                    initializeDashboardCharts();
+                }, 500);
+            }
+        });
+        
+        // Window focus event'ini dinle
+        window.addEventListener('focus', function() {
+            setTimeout(function() {
+                initializeDashboardCharts();
+            }, 500);
+        });
+        
+        // Livewire component güncellendiğinde
+        Livewire.on('refreshCharts', function() {
+            setTimeout(function() {
+                initializeDashboardCharts();
             }, 100);
         });
         
-        function initializeCharts() {
+        function initializeDashboardCharts() {
             // Destroy existing charts
-            if (operationChart) {
-                operationChart.destroy();
+            if (window.dashboardOperationChart && typeof window.dashboardOperationChart.destroy === 'function') {
+                window.dashboardOperationChart.destroy();
+                window.dashboardOperationChart = null;
             }
-            if (procedureChart) {
-                procedureChart.destroy();
+            if (window.dashboardProcedureChart && typeof window.dashboardProcedureChart.destroy === 'function') {
+                window.dashboardProcedureChart.destroy();
+                window.dashboardProcedureChart = null;
             }
             
             // Operation Trend Chart
-            const operationTrendCtx = document.getElementById('operationTrendChart');
+            const operationTrendCtx = document.getElementById('dashboardOperationTrendChart');
             if (operationTrendCtx) {
                 const trendData = @json($this->monthlyOperationTrend);
                 
-                operationChart = new Chart(operationTrendCtx, {
+                window.dashboardOperationChart = new Chart(operationTrendCtx, {
                     type: 'line',
                     data: {
                         labels: trendData.labels,
@@ -228,11 +263,11 @@
             }
 
             // Procedure Distribution Chart
-            const procedureCtx = document.getElementById('procedureChart');
+            const procedureCtx = document.getElementById('dashboardProcedureChart');
             if (procedureCtx) {
                 const procedureData = @json($this->procedureDistribution);
                 
-                procedureChart = new Chart(procedureCtx, {
+                window.dashboardProcedureChart = new Chart(procedureCtx, {
                     type: 'doughnut',
                     data: {
                         labels: procedureData.labels,

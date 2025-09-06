@@ -10,6 +10,7 @@ class Operation extends Model
 {
     protected $fillable = [
         'patient_id',
+        'doctor_id',
         'process',
         'process_detail',
         'process_date',
@@ -32,6 +33,11 @@ class Operation extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function doctor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
+    }
+
     public function notes(): HasMany
     {
         return $this->hasMany(OperationNote::class);
@@ -48,6 +54,11 @@ class Operation extends Model
     public function scopeByRegistrationPeriod($query, $period)
     {
         return $query->where('registration_period', $period);
+    }
+
+    public function scopeByDoctor($query, $doctorId)
+    {
+        return $query->where('doctor_id', $doctorId);
     }
 
     // Accessor'lar

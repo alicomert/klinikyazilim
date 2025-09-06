@@ -13,6 +13,7 @@ class OperationNote extends Model
     
     protected $fillable = [
         'operation_id',
+        'doctor_id',
         'user_id',
         'note_type',
         'content',
@@ -48,6 +49,14 @@ class OperationNote extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Doktor ilişkisi
+     */
+    public function doctor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
     }
     
     /**
@@ -104,5 +113,13 @@ class OperationNote extends Model
     public function scopeRecent($query, $days = 30)
     {
         return $query->where('note_date', '>=', Carbon::now()->subDays($days));
+    }
+
+    /**
+     * Belirli bir doktorun notları
+     */
+    public function scopeByDoctor($query, $doctorId)
+    {
+        return $query->where('doctor_id', $doctorId);
     }
 }

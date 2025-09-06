@@ -81,7 +81,7 @@ new #[Layout('components.layouts.auth')] #[VoltRoute(['GET', 'POST'])] class ext
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Log in to your account')" :description="__('Enter your email and password below to log in')" />
+    <x-auth-header :title="'KlinikGo\'ya Giriş Yapın'" :description="'Klinik yönetim sisteminize erişmek için giriş bilgilerinizi girin'" />
 
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
@@ -90,7 +90,7 @@ new #[Layout('components.layouts.auth')] #[VoltRoute(['GET', 'POST'])] class ext
         <!-- Email Address -->
         <flux:input
             wire:model="email"
-            :label="__('Email address')"
+            :label="'E-posta Adresi'"
             type="email"
             required
             autofocus
@@ -102,35 +102,35 @@ new #[Layout('components.layouts.auth')] #[VoltRoute(['GET', 'POST'])] class ext
         <div class="relative">
             <flux:input
                 wire:model="password"
-                :label="__('Password')"
+                :label="'Şifre'"
                 type="password"
                 required
                 autocomplete="current-password"
-                :placeholder="__('Password')"
+                :placeholder="'Şifre'"
                 viewable
             />
 
             @if (Route::has('password.request'))
-                <flux:link class="absolute end-0 top-0 text-sm" :href="route('password.request')" wire:navigate>
-                    {{ __('Forgot your password?') }}
-                </flux:link>
+                <a href="{{ route('password.request') }}" class="absolute end-0 top-0 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors duration-200" wire:navigate>
+                    Şifrenizi mi unuttunuz?
+                </a>
             @endif
         </div>
 
         <!-- Remember Me -->
-        <flux:checkbox wire:model="remember" :label="__('Remember me')" />
+        <flux:checkbox wire:model="remember" :label="'Beni Hatırla'" />
 
         <div class="flex items-center justify-end">
-            <flux:button variant="primary" type="submit" class="w-full" loading>
-                {{ __('Log in') }}
-            </flux:button>
+            <button type="submit" class="w-full bg-[#1e40af] hover:bg-white hover:text-[#1e40af] text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-blue-300 border-2 border-[#1e40af]">
+                Giriş Yap
+            </button>
         </div>
     </form>
 
     @if (Route::has('register'))
-        <div class="space-x-1 rtl:space-x-reverse text-center text-sm text-zinc-600 dark:text-zinc-400">
-            <span>{{ __('Don\'t have an account?') }}</span>
-            <flux:link :href="route('register')" wire:navigate>{{ __('Sign up') }}</flux:link>
+        <div class="text-center text-sm text-gray-700">
+            <span>Hesabınız yok mu?</span>
+            <a href="{{ route('register') }}" class="ml-1 text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200 underline" wire:navigate>Kayıt Ol</a>
         </div>
     @endif
 </div>

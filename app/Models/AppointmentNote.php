@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\EncryptableFields;
 use Carbon\Carbon;
 
-class PatientNote extends Model
+class AppointmentNote extends Model
 {
     use EncryptableFields;
     
     protected $fillable = [
-        'patient_id',
+        'appointment_id',
+        'doctor_id',
         'user_id',
         'note_type',
         'content',
@@ -35,11 +36,11 @@ class PatientNote extends Model
     ];
     
     /**
-     * Hasta ilişkisi
+     * Randevu ilişkisi
      */
-    public function patient(): BelongsTo
+    public function appointment(): BelongsTo
     {
-        return $this->belongsTo(Patient::class);
+        return $this->belongsTo(Appointment::class);
     }
     
     /**
@@ -48,6 +49,14 @@ class PatientNote extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Doktor ilişkisi
+     */
+    public function doctor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
     }
     
     /**
@@ -66,7 +75,21 @@ class PatientNote extends Model
         return $query->where('note_type', 'general');
     }
     
-
+    /**
+     * Hatırlatma notları
+     */
+    public function scopeReminderNotes($query)
+    {
+        return $query->where('note_type', 'reminder');
+    }
+    
+    /**
+     * Takip notları
+     */
+    public function scopeFollowUpNotes($query)
+    {
+        return $query->where('note_type', 'follow_up');
+    }
     
     /**
      * Özel notlar (sadece yazanın görebileceği)
@@ -109,6 +132,14 @@ class PatientNote extends Model
     }
 
     /**
+     * Belirli bir doktorun notları
+     */
+    public function scopeByDoctor($query, $doctorId)
+    {
+        return $query->where('doctor_id', $doctorId);
+    }
+
+    /**
      * Kullanıcının erişebileceği notları getir
      */
     public function scopeAccessibleBy($query, $user)
@@ -119,18 +150,8 @@ class PatientNote extends Model
         
         $doctorId = $user->getDoctorIdForFiltering();
         
-        return $query->whereHas('patient', function($patientQuery) use ($doctorId) {
-            $patientQuery->where('doctor_id', $doctorId);
-        });
-    }
-
-    /**
-     * Doktora göre notları getir
-     */
-    public function scopeByDoctor($query, $doctorId)
-    {
-        return $query->whereHas('patient', function($patientQuery) use ($doctorId) {
-            $patientQuery->where('doctor_id', $doctorId);
+        return $query->whereHas('appointment', function($appointmentQuery) use ($doctorId) {
+            $appointmentQuery->where('doctor_id', $doctorId);
         });
     }
 
@@ -146,6 +167,13 @@ class PatientNote extends Model
                 ->orWhere(function($subQuery) use ($user) {
                     $subQuery->where('is_private', true)
                             ->where('user_id', $user->id);
+                })
+                // Veya doktor olmayan kullanıcılar için aynı doktora bağlı private notları göster
+                ->orWhere(function($subQuery) use ($user) {
+                    if ($user->role !== 'doctor' && $user->doctor_id) {
+                        $subQuery->where('is_private', true)
+                                ->where('doctor_id', $user->doctor_id);
+                    }
                 });
         });
     }

@@ -34,7 +34,7 @@
                     <i class="fas fa-user text-blue-600"></i>
                 </div>
                 <div class="hidden sm:block">
-                    <span class="text-sm font-medium text-gray-800">Dr. Ahmet Yılmaz</span>
+                    <span class="text-sm font-medium text-gray-800">{{ Auth::user()->name }}</span>
                 </div>
                 
                 <!-- Profile Dropdown -->
@@ -67,10 +67,13 @@
                             Ayarlar
                         </a>
                         <div class="border-t border-gray-200"></div>
-                        <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                            <i class="fas fa-sign-out-alt mr-2"></i>
-                            Çıkış Yap
-                        </a>
+                        <form method="POST" action="{{ route('logout') }}">
+                            @csrf
+                            <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i class="fas fa-sign-out-alt mr-2"></i>
+                                Çıkış Yap
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>

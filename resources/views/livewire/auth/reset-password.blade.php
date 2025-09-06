@@ -69,16 +69,16 @@ new #[Layout('components.layouts.auth')] class extends Component {
 }; ?>
 
 <div class="flex flex-col gap-6">
-    <x-auth-header :title="__('Reset password')" :description="__('Please enter your new password below')" />
+    <x-auth-header :title="'Yeni Şifre Belirleyin'" :description="'KlinikGo hesabınız için yeni şifrenizi aşağıya girin'" />
 
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
 
     <form method="POST" wire:submit="resetPassword" class="flex flex-col gap-6">
-        <!-- Email Address -->
+        <!-- Email -->
         <flux:input
             wire:model="email"
-            :label="__('Email')"
+            :label="'E-posta'"
             type="email"
             required
             autocomplete="email"
@@ -87,29 +87,29 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <!-- Password -->
         <flux:input
             wire:model="password"
-            :label="__('Password')"
+            :label="'Şifre'"
             type="password"
             required
             autocomplete="new-password"
-            :placeholder="__('Password')"
+            :placeholder="'Şifre'"
             viewable
         />
 
         <!-- Confirm Password -->
         <flux:input
             wire:model="password_confirmation"
-            :label="__('Confirm password')"
+            :label="'Şifre Onayı'"
             type="password"
             required
             autocomplete="new-password"
-            :placeholder="__('Confirm password')"
+            :placeholder="'Şifre Onayı'"
             viewable
         />
 
         <div class="flex items-center justify-end">
-            <flux:button type="submit" variant="primary" class="w-full">
-                {{ __('Reset password') }}
-            </flux:button>
+            <button type="submit" class="w-full bg-white text-[#1e40af] hover:bg-[#1e40af] hover:text-white font-semibold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-300 focus:outline-none focus:ring-4 focus:ring-white/30 border-2 border-white">
+                Şifreyi Sıfırla
+            </button>
         </div>
     </form>
 </div>

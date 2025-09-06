@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Operation;
 
 class Appointment extends Model
 {
@@ -17,6 +18,7 @@ class Appointment extends Model
         'notes',
         'status',
         'doctor_name',
+        'doctor_id',
     ];
 
     protected $casts = [
@@ -27,6 +29,21 @@ class Appointment extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    public function doctor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
+    }
+
+    public function operation(): BelongsTo
+    {
+        return $this->belongsTo(Operation::class);
+    }
+
+    public function appointmentNotes()
+    {
+        return $this->hasMany(AppointmentNote::class);
     }
 
     public function getPatientDisplayNameAttribute(): string

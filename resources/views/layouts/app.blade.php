@@ -484,7 +484,6 @@
                 initCharts() {
                     this.$nextTick(() => {
                         this.createRevenueChart();
-                        this.createProcedureChart();
                     });
                 },
                 
@@ -528,42 +527,7 @@
                     }
                 },
                 
-                createProcedureChart() {
-                    const ctx = document.getElementById('procedureChart');
-                    if (ctx) {
-                        new Chart(ctx, {
-                            type: 'doughnut',
-                            data: {
-                                labels: ['Burun Estetiği', 'Botoks', 'Dudak Dolgusu', 'Yüz Germe', 'Diğer'],
-                                datasets: [{
-                                    data: [35, 25, 20, 15, 5],
-                                    backgroundColor: [
-                                        '#3B82F6',
-                                        '#10B981',
-                                        '#8B5CF6',
-                                        '#F59E0B',
-                                        '#EF4444'
-                                    ],
-                                    borderWidth: 0
-                                }]
-                            },
-                            options: {
-                                responsive: true,
-                                maintainAspectRatio: false,
-                                plugins: {
-                                    legend: {
-                                        position: 'bottom',
-                                        labels: {
-                                            padding: 20,
-                                            usePointStyle: true
-                                        }
-                                    }
-                                }
-                            }
-                        });
-                    }
-                },
-                
+
                 handleQuickAction(actionId) {
                     switch(actionId) {
                         case 'add-patient':

@@ -3,11 +3,14 @@
 namespace App\Livewire;
 
 use App\Models\Appointment;
+use App\Models\AppointmentNote;
 use App\Models\Patient;
 use App\Models\Activity;
+use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class AppointmentList extends Component
 {
@@ -57,6 +60,17 @@ class AppointmentList extends Component
     // Delete confirmation
     public $showDeleteModal = false;
     public $appointmentToDelete = null;
+    
+    // Notes
+    public $showNotesModal = false;
+    public $selectedAppointmentForNotes = null;
+    public $appointmentNotes = [];
+    public $newNote = [
+        'content' => '',
+        'note_type' => 'general',
+        'is_private' => false
+    ];
+    public $editingNote = null;
     
     protected $rules = [
         'appointment_date' => 'required|date',
@@ -134,10 +148,12 @@ class AppointmentList extends Component
         
         // Activity log
         $patientName = $appointment->patient ? $appointment->patient->name : 'Bilinmeyen Hasta';
+        
         Activity::create([
             'type' => 'appointment_status_updated',
             'description' => "Randevu durumu güncellendi: {$patientName} - {$status}",
-            'patient_id' => $appointment->patient_id
+            'patient_id' => $appointment->patient_id,
+            'doctor_id' => $this->getDoctorIdForFiltering()
         ]);
         
         session()->flash('message', 'Randevu durumu güncellendi.');
@@ -157,10 +173,14 @@ class AppointmentList extends Component
             
             // Activity log
             $patientName = $appointment->patient ? $appointment->patient->first_name . ' ' . $appointment->patient->last_name : $appointment->patient_name;
+            $user = Auth::user();
+            $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+            
             Activity::create([
                 'type' => 'appointment_status_bulk_updated',
                 'description' => "Toplu randevu durumu güncellendi: {$patientName} - {$this->bulkStatus}",
-                'patient_id' => $appointment->patient_id
+                'patient_id' => $appointment->patient_id,
+                'doctor_id' => $doctorId
             ]);
         }
         
@@ -194,7 +214,8 @@ class AppointmentList extends Component
             Activity::create([
                 'type' => 'appointment_deleted',
                 'description' => "Randevu silindi: {$patientName} - {$appointment->appointment_date} {$appointment->appointment_time}",
-                'patient_id' => $appointment->patient_id
+                'patient_id' => $appointment->patient_id,
+                'doctor_id' => $this->getDoctorIdForFiltering()
             ]);
             
             $appointment->delete();
@@ -324,6 +345,14 @@ class AppointmentList extends Component
         $this->patient_id = $appointment->patient_id;
         $this->patient_name = $appointment->patient_name;
         $this->patient_phone = $appointment->patient_phone;
+        
+        // Eğer patient_id varsa, hasta bilgilerini yükle
+        if ($appointment->patient_id) {
+            $this->selectedPatient = Patient::find($appointment->patient_id);
+        } else {
+            $this->selectedPatient = null;
+        }
+        
         $this->appointment_date = $appointment->appointment_date->format('Y-m-d');
         $this->appointment_time = $appointment->appointment_time->format('H:i');
         
@@ -341,14 +370,13 @@ class AppointmentList extends Component
 
     public function saveAppointment()
     {
-        // Hasta seçilmemişse, hasta adı ve telefon gerekli
+        // Hasta seçilmemişse, hasta adı gerekli
         if (!$this->patient_id) {
             $this->validate([
                 'patient_name' => 'required|string|max:255',
-                'patient_phone' => 'required|string|max:20',
+                'patient_phone' => 'nullable|string|max:20',
             ], [
                 'patient_name.required' => 'Hasta adı gereklidir.',
-                'patient_phone.required' => 'Hasta telefonu gereklidir.',
             ]);
         }
         
@@ -371,6 +399,7 @@ class AppointmentList extends Component
             'appointment_type' => $this->appointment_type,
             'notes' => $this->notes,
             'status' => $this->status,
+            'doctor_id' => $this->getDoctorIdForFiltering(),
         ];
 
         if ($this->editingAppointment) {
@@ -380,6 +409,7 @@ class AppointmentList extends Component
                 'type' => 'appointment_updated',
                 'description' => 'Randevu güncellendi: ' . $this->appointment_type,
                 'patient_id' => $this->patient_id,
+                'doctor_id' => $this->getDoctorIdForFiltering()
             ]);
             
             session()->flash('message', 'Randevu başarıyla güncellendi.');
@@ -390,6 +420,7 @@ class AppointmentList extends Component
                 'type' => 'appointment_created',
                 'description' => 'Yeni randevu oluşturuldu: ' . $this->appointment_type,
                 'patient_id' => $this->patient_id,
+                'doctor_id' => $this->getDoctorIdForFiltering()
             ]);
             
             session()->flash('message', 'Randevu başarıyla oluşturuldu.');
@@ -422,10 +453,14 @@ class AppointmentList extends Component
                 ]);
                 
                 // Aktivite kaydı oluştur
+                $user = Auth::user();
+                $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+                
                 Activity::create([
                     'type' => 'appointment_moved',
                     'description' => "Randevu {$appointment->appointment_date->format('d.m.Y')} tarihinden {$newDate} tarihine taşındı.",
-                    'patient_id' => $appointment->patient_id
+                    'patient_id' => $appointment->patient_id,
+                    'doctor_id' => $doctorId
                 ]);
                 
                 session()->flash('message', 'Randevu başarıyla taşındı.');
@@ -438,6 +473,7 @@ class AppointmentList extends Component
     private function resetForm()
     {
         $this->patient_id = null;
+        $this->selectedPatient = null;
         $this->patient_name = '';
         $this->patient_phone = '';
         $this->appointment_date = now()->format('Y-m-d');
@@ -451,6 +487,20 @@ class AppointmentList extends Component
     public function getAppointmentsProperty()
     {
         $query = Appointment::with('patient');
+        
+        // Doktor bazlı filtreleme
+        $user = Auth::user();
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        } elseif (in_array($user->role, ['nurse', 'admin'])) {
+            // Hemşire ve admin için doctor_id kontrolü
+            if ($user->role === 'nurse' && $user->doctor_id) {
+                $query->where('doctor_id', $user->doctor_id);
+            }
+            // Admin için tüm hastalar görünür (ek filtre yok)
+        }
         
         // Görünüm moduna göre filtreleme
         if ($this->viewMode === 'weekly') {
@@ -488,7 +538,23 @@ class AppointmentList extends Component
 
     public function getPatientsProperty()
     {
-        return Patient::orderBy('first_name')->limit(10)->get();
+        $query = Patient::orderBy('first_name');
+        
+        // Doktor bazlı filtreleme
+        $user = Auth::user();
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        } elseif (in_array($user->role, ['nurse', 'admin'])) {
+            // Hemşire ve admin için doctor_id kontrolü
+            if ($user->role === 'nurse' && $user->doctor_id) {
+                $query->where('doctor_id', $user->doctor_id);
+            }
+            // Admin için tüm hastalar görünür (ek filtre yok)
+        }
+        
+        return $query->limit(10)->get();
     }
     
     public function getFilteredPatientsProperty()
@@ -499,13 +565,23 @@ class AppointmentList extends Component
         
         $searchTerm = strtolower($this->patientSearch);
         
-        return Patient::where(function ($query) use ($searchTerm) {
+        $query = Patient::where(function ($query) use ($searchTerm) {
             $query->whereRaw('LOWER(first_name) LIKE ?', ['%' . $searchTerm . '%'])
                   ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $searchTerm . '%'])
                   ->orWhereRaw('LOWER(CONCAT(first_name, " ", last_name)) LIKE ?', ['%' . $searchTerm . '%'])
                   ->orWhere('tc_identity', 'like', '%' . $this->patientSearch . '%')
                   ->orWhere('phone', 'like', '%' . $this->patientSearch . '%');
-        })->limit(10)->get();
+        });
+        
+        // Doktor bazlı filtreleme
+        $user = Auth::user();
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        
+        return $query->limit(10)->get();
     }
 
     public function getAppointmentsByDateProperty()
@@ -518,9 +594,18 @@ class AppointmentList extends Component
             $endDate = Carbon::create($this->currentYear, $this->currentMonth, 1)->endOfMonth();
         }
         
-        return Appointment::with('patient')
-            ->whereBetween('appointment_date', [$startDate, $endDate])
-            ->when($this->search, function ($q) {
+        $query = Appointment::with('patient')
+            ->whereBetween('appointment_date', [$startDate, $endDate]);
+            
+        // Doktor bazlı filtreleme
+        $user = Auth::user();
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        
+        return $query->when($this->search, function ($q) {
                 $q->where(function ($query) {
                     $query->where('patient_name', 'like', '%' . $this->search . '%')
                           ->orWhere('patient_phone', 'like', '%' . $this->search . '%')
@@ -594,12 +679,274 @@ class AppointmentList extends Component
 
         $searchTerm = strtolower($this->patientSearch);
         
-        return Patient::where(function($query) use ($searchTerm) {
+        $query = Patient::where(function($query) use ($searchTerm) {
             $query->whereRaw('LOWER(first_name) LIKE ?', ['%' . $searchTerm . '%'])
                   ->orWhereRaw('LOWER(last_name) LIKE ?', ['%' . $searchTerm . '%'])
                   ->orWhereRaw('LOWER(CONCAT(first_name, " ", last_name)) LIKE ?', ['%' . $searchTerm . '%'])
                   ->orWhere('tc_identity', 'like', '%' . $this->patientSearch . '%')
                   ->orWhere('phone', 'like', '%' . $this->patientSearch . '%');
-        })->limit(10)->get();
+        });
+        
+        // Doktor bazlı filtreleme
+        $user = Auth::user();
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        } elseif (in_array($user->role, ['nurse', 'admin'])) {
+            // Hemşire ve admin için doctor_id kontrolü
+            if ($user->role === 'nurse' && $user->doctor_id) {
+                $query->where('doctor_id', $user->doctor_id);
+            }
+            // Admin için tüm hastalar görünür (ek filtre yok)
+        }
+        
+        return $query->limit(10)->get();
+    }
+    
+    private function getDoctorIdForFiltering()
+    {
+        $user = Auth::user();
+        if ($user->role === 'doctor') {
+            return $user->id;
+        } elseif ($user->doctor_id) {
+            return $user->doctor_id;
+        }
+        return null;
+    }
+    
+    // Notes Methods
+    public function showNotes($appointmentId)
+    {
+        $this->selectedAppointmentForNotes = Appointment::find($appointmentId);
+        $this->loadAppointmentNotes($appointmentId);
+        $this->showNotesModal = true;
+        $this->resetNoteForm();
+    }
+
+    public function closeNotesModal()
+    {
+        $this->showNotesModal = false;
+        $this->selectedAppointmentForNotes = null;
+        $this->appointmentNotes = [];
+        $this->resetNoteForm();
+        $this->editingNote = null;
+    }
+
+    public function loadAppointmentNotes($appointmentId)
+    {
+        $user = Auth::user();
+        
+        $this->appointmentNotes = AppointmentNote::where('appointment_id', $appointmentId)
+            ->visibleTo($user)
+            ->with(['user', 'doctor'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    public function editNote($noteId)
+    {
+        $note = AppointmentNote::find($noteId);
+        
+        if (!$this->canEditNote($note)) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Bu notu düzenleme yetkiniz yok.'
+            ]);
+            return;
+        }
+        
+        $this->editingNote = $noteId;
+        $this->newNote = [
+            'content' => $note->content,
+            'note_type' => $note->note_type,
+            'is_private' => $note->is_private
+        ];
+    }
+
+    public function deleteNote($noteId)
+    {
+        $note = AppointmentNote::find($noteId);
+        
+        if (!$this->canDeleteNote($note)) {
+            $this->dispatch('show-toast', [
+                'type' => 'error',
+                'message' => 'Bu notu silme yetkiniz yok.'
+            ]);
+            return;
+        }
+        
+        $note->delete();
+        
+        // Activities tablosuna kayıt ekle
+        $user = auth()->user();
+        $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+        
+        Activity::create([
+            'type' => 'appointment_note_deleted',
+            'description' => 'Randevu notu silindi',
+            'patient_id' => $this->selectedAppointmentForNotes->patient_id,
+            'doctor_id' => $doctorId
+        ]);
+        
+        $this->loadAppointmentNotes($this->selectedAppointmentForNotes->id);
+        
+        $this->dispatch('show-toast', [
+            'type' => 'success',
+            'message' => 'Not başarıyla silindi.'
+        ]);
+    }
+
+    public function saveNote()
+    {
+        $this->validate([
+            'newNote.content' => 'required|string',
+            'newNote.note_type' => 'required|string',
+            'newNote.is_private' => 'boolean'
+        ]);
+
+        if ($this->editingNote) {
+            // Düzenleme işlemi
+            $note = AppointmentNote::find($this->editingNote);
+            
+            // Yetki kontrolü
+            if (!$this->canEditNote($note)) {
+                $this->dispatch('show-toast', [
+                    'type' => 'error',
+                    'message' => 'Bu notu düzenleme yetkiniz yok.'
+                ]);
+                return;
+            }
+
+            $note->update([
+                'content' => $this->newNote['content'],
+                'note_type' => $this->newNote['note_type'],
+                'is_private' => $this->newNote['is_private'],
+                'last_updated' => now()
+            ]);
+
+            // Activities tablosuna kayıt ekle
+            $user = auth()->user();
+            $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+            
+            Activity::create([
+                'type' => 'appointment_note_updated',
+                'description' => 'Randevu notu güncellendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
+                'patient_id' => $this->selectedAppointmentForNotes->patient_id,
+                'doctor_id' => $doctorId
+            ]);
+
+            $this->dispatch('show-toast', [
+                'type' => 'success',
+                'message' => 'Not başarıyla güncellendi.'
+            ]);
+        } else {
+            // Yeni not ekleme
+            $user = Auth::user();
+            
+            // Doktor ID'sini belirle
+            $doctorId = null;
+            if ($user->role === 'doctor') {
+                $doctorId = $user->id;
+            } elseif ($user->role === 'secretary') {
+                $doctorId = $user->doctor_id;
+            }
+            
+            $appointmentNote = AppointmentNote::create([
+                'appointment_id' => $this->selectedAppointmentForNotes->id,
+                'user_id' => Auth::id(),
+                'doctor_id' => $doctorId,
+                'content' => $this->newNote['content'],
+                'note_type' => $this->newNote['note_type'],
+                'is_private' => $this->newNote['is_private'],
+                'note_date' => now(),
+                'last_updated' => now()
+            ]);
+
+            // Activities tablosuna kayıt ekle
+            Activity::create([
+                'type' => 'appointment_note_added',
+                'description' => 'Randevu notu eklendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
+                'patient_id' => $this->selectedAppointmentForNotes->patient_id,
+                'doctor_id' => $doctorId
+            ]);
+
+            $this->dispatch('show-toast', [
+                'type' => 'success',
+                'message' => 'Not başarıyla eklendi.'
+            ]);
+        }
+
+        $this->loadAppointmentNotes($this->selectedAppointmentForNotes->id);
+        $this->resetNoteForm();
+        $this->editingNote = null;
+    }
+
+    public function canEditNote($note)
+    {
+        $user = Auth::user();
+        
+        // Doktor sadece kendi notlarını düzenleyebilir
+        if ($user->role === 'doctor') {
+            return $note->user_id === $user->id;
+        }
+        
+        // Nurse ve secretary birbirlerinin notlarını düzenleyebilir
+        // ama doktor notlarına dokunamaz
+        if ($note->user->role === 'doctor') {
+            return false;
+        }
+        
+        return true; // nurse/secretary birbirlerinin notlarını düzenleyebilir
+    }
+
+    public function canDeleteNote($note)
+    {
+        $user = Auth::user();
+        
+        // Doktor sadece kendi notlarını silebilir
+        if ($user->role === 'doctor') {
+            return $note->user_id === $user->id;
+        }
+        
+        // Nurse ve secretary birbirlerinin notlarını silebilir
+        // ama doktor notlarına dokunamaz
+        if ($note->user->role === 'doctor') {
+            return false;
+        }
+        
+        return true; // nurse/secretary birbirlerinin notlarını silebilir
+    }
+
+    public function resetNoteForm()
+    {
+        $this->newNote = [
+            'content' => '',
+            'note_type' => 'general',
+            'is_private' => false
+        ];
+    }
+
+    public function getNoteTypeText($type)
+    {
+        return match($type) {
+            'medical' => 'Tıbbi',
+            'appointment' => 'Randevu',
+            'followup' => 'Takip',
+            'treatment' => 'Tedavi',
+            'general' => 'Genel',
+            default => 'Genel'
+        };
+    }
+
+    public function getNoteTypeIcon($type)
+    {
+        return match($type) {
+            'medical' => 'fas fa-stethoscope text-red-500',
+            'appointment' => 'fas fa-calendar text-blue-500',
+            'followup' => 'fas fa-eye text-green-500',
+            'general' => 'fas fa-sticky-note text-yellow-500',
+            default => 'fas fa-sticky-note text-gray-500'
+        };
     }
 }

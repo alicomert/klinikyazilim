@@ -11,30 +11,51 @@ use Carbon\Carbon;
 
 class Dashboard extends Component
 {
+    public $operationTrendPeriod = '6months';
+    public $procedurePeriod = 'current_month';
     public function getStatsProperty()
     {
+        $user = auth()->user();
         $currentMonth = $this->convertToTurkishMonth(Carbon::now()->format('m.Y'));
         $currentYear = Carbon::now()->year;
         $lastMonth = $this->convertToTurkishMonth(Carbon::now()->subMonth()->format('m.Y'));
         $lastYear = Carbon::now()->subYear()->year;
 
+        // Operation query with doctor filtering
+        $operationQuery = Operation::query();
+        if ($user->role === 'doctor') {
+            $operationQuery->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $operationQuery->where('doctor_id', $user->doctor_id);
+        }
+        // Admin sees all operations
+
+        // Patient query with doctor filtering
+        $patientQuery = Patient::query();
+        if ($user->role === 'doctor') {
+            $patientQuery->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $patientQuery->where('doctor_id', $user->doctor_id);
+        }
+        // Admin sees all patients
+
         // Bu ay operasyonları
-        $thisMonthOperations = Operation::where('registration_period', $currentMonth)->count();
+        $thisMonthOperations = (clone $operationQuery)->where('registration_period', $currentMonth)->count();
         
         // Geçen ay operasyonları
-        $lastMonthOperations = Operation::where('registration_period', $lastMonth)->count();
+        $lastMonthOperations = (clone $operationQuery)->where('registration_period', $lastMonth)->count();
         
         // Bu yıl operasyonları (registration_period'a göre)
-        $thisYearOperations = Operation::where('registration_period', 'like', '% ' . $currentYear)->count();
+        $thisYearOperations = (clone $operationQuery)->where('registration_period', 'like', '% ' . $currentYear)->count();
         
         // Geçen yıl operasyonları (registration_period'a göre)
-        $lastYearOperations = Operation::where('registration_period', 'like', '% ' . $lastYear)->count();
+        $lastYearOperations = (clone $operationQuery)->where('registration_period', 'like', '% ' . $lastYear)->count();
         
         // Toplam operasyonlar
-        $totalOperations = Operation::count();
+        $totalOperations = (clone $operationQuery)->count();
         
         // Toplam hastalar
-        $totalPatients = Patient::count();
+        $totalPatients = $patientQuery->count();
         
         // Yüzde hesaplamaları
         $monthlyPercentageChange = $lastMonthOperations > 0 
@@ -58,16 +79,27 @@ class Dashboard extends Component
     
     public function getMonthlyOperationTrendProperty()
     {
+        $user = auth()->user();
         $months = [];
         $data = [];
         
-        for ($i = 5; $i >= 0; $i--) {
+        $monthsCount = $this->operationTrendPeriod === '12months' ? 11 : 5;
+        
+        for ($i = $monthsCount; $i >= 0; $i--) {
             $date = Carbon::now()->subMonths($i);
             $period = $this->convertToTurkishMonth($date->format('m.Y'));
             $monthName = $period;
             
+            $operationQuery = Operation::where('registration_period', $period);
+            if ($user->role === 'doctor') {
+                $operationQuery->where('doctor_id', $user->id);
+            } elseif ($user->role === 'secretary') {
+                $operationQuery->where('doctor_id', $user->doctor_id);
+            }
+            // Admin sees all operations
+            
             $months[] = $monthName;
-            $data[] = Operation::where('registration_period', $period)->count();
+            $data[] = $operationQuery->count();
         }
         
         return [
@@ -78,23 +110,31 @@ class Dashboard extends Component
     
     public function getProcedureDistributionProperty()
     {
-        $currentMonth = $this->convertToTurkishMonth(Carbon::now()->format('m.Y'));
+        $user = auth()->user();
         
-        $surgery = Operation::where('process', 'surgery')
-            ->where('registration_period', $currentMonth)
-            ->count();
-            
-        $mesotherapy = Operation::where('process', 'mesotherapy')
-            ->where('registration_period', $currentMonth)
-            ->count();
-            
-        $botox = Operation::where('process', 'botox')
-            ->where('registration_period', $currentMonth)
-            ->count();
-            
-        $filler = Operation::where('process', 'filler')
-            ->where('registration_period', $currentMonth)
-            ->count();
+        if ($this->procedurePeriod === 'current_month') {
+            $currentMonth = $this->convertToTurkishMonth(Carbon::now()->format('m.Y'));
+            $baseQuery = Operation::where('registration_period', $currentMonth);
+        } else { // last_3_months
+            $periods = [];
+            for ($i = 2; $i >= 0; $i--) {
+                $date = Carbon::now()->subMonths($i);
+                $periods[] = $this->convertToTurkishMonth($date->format('m.Y'));
+            }
+            $baseQuery = Operation::whereIn('registration_period', $periods);
+        }
+        
+        if ($user->role === 'doctor') {
+            $baseQuery->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $baseQuery->where('doctor_id', $user->doctor_id);
+        }
+        // Admin sees all operations
+        
+        $surgery = (clone $baseQuery)->where('process', 'surgery')->count();
+        $mesotherapy = (clone $baseQuery)->where('process', 'mesotherapy')->count();
+        $botox = (clone $baseQuery)->where('process', 'botox')->count();
+        $filler = (clone $baseQuery)->where('process', 'filler')->count();
             
         return [
             'labels' => ['Ameliyat', 'Mezoterapi', 'Botoks', 'Dolgu'],
@@ -128,11 +168,21 @@ class Dashboard extends Component
 
     public function getTodayAppointmentsProperty()
     {
+        $user = auth()->user();
         $today = Carbon::today();
         
-        return Appointment::with('patient')
+        $appointmentQuery = Appointment::with('patient')
             ->where('appointment_date', '>=', $today)
-            ->where('status', '!=', 'cancelled')
+            ->where('status', '!=', 'cancelled');
+            
+        if ($user->role === 'doctor') {
+            $appointmentQuery->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $appointmentQuery->where('doctor_id', $user->doctor_id);
+        }
+        // Admin sees all appointments
+        
+        return $appointmentQuery
             ->orderBy('appointment_date')
             ->orderBy('appointment_time')
             ->take(4)
@@ -189,8 +239,18 @@ class Dashboard extends Component
 
     public function getRecentActivitiesProperty()
     {
-        return Activity::with('patient')
-            ->latest()
+        $user = auth()->user();
+        
+        $activityQuery = Activity::with('patient')->latest();
+        
+        if ($user->role === 'doctor') {
+            $activityQuery->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $activityQuery->where('doctor_id', $user->doctor_id);
+        }
+        // Admin sees all activities
+        
+        return $activityQuery
             ->take(5)
             ->get()
             ->map(function ($activity) {
@@ -244,6 +304,28 @@ class Dashboard extends Component
             'patient_updated' => 'Hasta bilgileri güncellendi',
             default => 'Sistem aktivitesi'
         };
+    }
+
+    public function mount()
+    {
+        // Component yüklendiğinde grafikleri yenile
+        $this->dispatch('refreshCharts');
+    }
+    
+    public function refreshCharts()
+    {
+        // Manuel grafik yenileme
+        $this->dispatch('refreshCharts');
+    }
+    
+    public function updatedOperationTrendPeriod()
+    {
+        $this->dispatch('refreshCharts');
+    }
+    
+    public function updatedProcedurePeriod()
+    {
+        $this->dispatch('refreshCharts');
     }
 
     public function render()

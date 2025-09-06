@@ -8,29 +8,26 @@
     }"
     x-data="{
         menuItems: [
+            @if(Auth::user()->isDoctor())
+                { id: 'doctor-panel', name: 'Doktor Paneli', icon: 'fas fa-user-md', route: '/doctor-panel' },
+            @endif
             { id: 'dashboard', name: 'Anasayfa', icon: 'fas fa-tachometer-alt', route: '/' },
             { id: 'clinic', name: 'Randevular', icon: 'fas fa-calendar-alt', route: '/clinic' },
             { id: 'patients', name: 'Hasta Kayıtları', icon: 'fas fa-users', route: '/patients' },
             { id: 'operations', name: 'Operasyonlar', icon: 'fas fa-procedures', route: '/operations' },
-            { id: 'settings', name: 'Ayarlar', icon: 'fas fa-cog', route: '/settings' },
-            { id: 'reports', name: 'Raporlar', icon: 'fas fa-chart-bar', route: '/reports' },
-            { id: 'doctor-panel', name: 'Doktor Paneli', icon: 'fas fa-user-md', route: '/doctor-panel' },
-            { id: 'messages', name: 'Hasta Mesajları', icon: 'fas fa-comments', route: '/messages', badge: 3 }
+            { id: 'reports', name: 'Raporlar', icon: 'fas fa-chart-bar', route: '/reports' }
         ]
     }"
 >
-    <!-- Logo -->
-    <div class="p-4 flex items-center space-x-2 border-b border-blue-700">
-        <div class="bg-white p-2 rounded-lg">
-            <i class="fas fa-hospital text-blue-600 text-xl"></i>
+    <!--             { id: 'settings', name: 'Ayarlar', icon: 'fas fa-cog', route: '/settings' }, bir de messages kapattım. 
+ -->
+    <div class="p-4 flex items-center justify-center border-b border-blue-700">
+        <div class="flex items-center space-x-2">
+            <div class="bg-white p-2 rounded-lg">
+                <img src="{{ asset('klinikgo.png') }}" alt="KlinikGo Logo" class="h-6 w-auto">
+            </div>
+            <span class="text-white font-semibold text-lg">KlinikGo</span>
         </div>
-        <span 
-            class="logo-text font-bold text-xl transition-opacity duration-300"
-            :class="{ 'opacity-0': sidebarCollapsed }"
-            x-show="!sidebarCollapsed"
-        >
-            EstetikLine
-        </span>
     </div>
 
     <!-- Doctor Info -->
@@ -43,8 +40,8 @@
             :class="{ 'opacity-0': sidebarCollapsed }"
             x-show="!sidebarCollapsed"
         >
-            <div class="font-semibold">Dr. Ahmet Yılmaz</div>
-            <div class="text-xs text-blue-200">Plastik Cerrahi Uzmanı</div>
+            <div class="font-semibold">{{ Auth::user()->name }}</div>
+            <div class="text-xs text-blue-200">{{ Auth::user()->getRoleDisplayName() }}</div>
         </div>
     </div>
 

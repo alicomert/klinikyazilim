@@ -7,15 +7,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Traits\EncryptableFields;
 use Carbon\Carbon;
 
-class PatientNote extends Model
+class DoctorNote extends Model
 {
     use EncryptableFields;
     
     protected $fillable = [
-        'patient_id',
         'user_id',
-        'note_type',
+        'doctor_id',
+        'title',
         'content',
+        'note_type',
         'is_private',
         'note_date',
         'last_updated'
@@ -35,14 +36,6 @@ class PatientNote extends Model
     ];
     
     /**
-     * Hasta ilişkisi
-     */
-    public function patient(): BelongsTo
-    {
-        return $this->belongsTo(Patient::class);
-    }
-    
-    /**
      * Kullanıcı (notu yazan) ilişkisi
      */
     public function user(): BelongsTo
@@ -51,11 +44,11 @@ class PatientNote extends Model
     }
     
     /**
-     * Tıbbi notlar
+     * Doktor ilişkisi
      */
-    public function scopeMedicalNotes($query)
+    public function doctor(): BelongsTo
     {
-        return $query->where('note_type', 'medical');
+        return $this->belongsTo(User::class, 'doctor_id');
     }
     
     /**
@@ -66,7 +59,21 @@ class PatientNote extends Model
         return $query->where('note_type', 'general');
     }
     
-
+    /**
+     * Hatırlatma notları
+     */
+    public function scopeReminderNotes($query)
+    {
+        return $query->where('note_type', 'reminder');
+    }
+    
+    /**
+     * Önemli notlar
+     */
+    public function scopeImportantNotes($query)
+    {
+        return $query->where('note_type', 'important');
+    }
     
     /**
      * Özel notlar (sadece yazanın görebileceği)
@@ -107,7 +114,15 @@ class PatientNote extends Model
     {
         return $query->where('note_date', '>=', Carbon::now()->subDays($days));
     }
-
+    
+    /**
+     * Belirli bir doktorun notları
+     */
+    public function scopeByDoctor($query, $doctorId)
+    {
+        return $query->where('doctor_id', $doctorId);
+    }
+    
     /**
      * Kullanıcının erişebileceği notları getir
      */
@@ -119,21 +134,9 @@ class PatientNote extends Model
         
         $doctorId = $user->getDoctorIdForFiltering();
         
-        return $query->whereHas('patient', function($patientQuery) use ($doctorId) {
-            $patientQuery->where('doctor_id', $doctorId);
-        });
+        return $query->where('doctor_id', $doctorId);
     }
-
-    /**
-     * Doktora göre notları getir
-     */
-    public function scopeByDoctor($query, $doctorId)
-    {
-        return $query->whereHas('patient', function($patientQuery) use ($doctorId) {
-            $patientQuery->where('doctor_id', $doctorId);
-        });
-    }
-
+    
     /**
      * Kullanıcının görebileceği notları getir (private/public kontrolü ile)
      */
@@ -146,6 +149,13 @@ class PatientNote extends Model
                 ->orWhere(function($subQuery) use ($user) {
                     $subQuery->where('is_private', true)
                             ->where('user_id', $user->id);
+                })
+                // Veya doktor olmayan kullanıcılar için aynı doktora bağlı private notları göster
+                ->orWhere(function($subQuery) use ($user) {
+                    if ($user->role !== 'doctor' && $user->doctor_id) {
+                        $subQuery->where('is_private', true)
+                                ->where('doctor_id', $user->doctor_id);
+                    }
                 });
         });
     }

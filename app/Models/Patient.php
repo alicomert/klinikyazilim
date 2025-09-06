@@ -12,6 +12,7 @@ class Patient extends Model
     use EncryptableFields;
     
     protected $fillable = [
+        'doctor_id',
         'first_name',
         'last_name',
         'tc_identity',
@@ -76,6 +77,14 @@ class Patient extends Model
     public function activities(): HasMany
     {
         return $this->hasMany(Activity::class);
+    }
+
+    /**
+     * Doktor ilişkisi
+     */
+    public function doctor()
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
     }
     
     /**
@@ -149,5 +158,26 @@ class Patient extends Model
     {
         $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
         return $query->where('phone', 'like', '%' . $cleanPhone . '%');
+    }
+
+    /**
+     * Doktora göre filtreleme
+     */
+    public function scopeByDoctor($query, $doctorId)
+    {
+        return $query->where('doctor_id', $doctorId);
+    }
+
+    /**
+     * Kullanıcının erişebileceği hastaları getir
+     */
+    public function scopeAccessibleBy($query, $user)
+    {
+        if ($user->isAdmin()) {
+            return $query; // Admin tüm hastalara erişebilir
+        }
+        
+        $doctorId = $user->getDoctorIdForFiltering();
+        return $query->where('doctor_id', $doctorId);
     }
 }

@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\Patient;
 use App\Models\Activity;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 
@@ -90,7 +91,8 @@ class AddPatientModal extends Component
     
     public function loadPatientData()
     {
-        $patient = Patient::find($this->patientId);
+        $user = Auth::user();
+        $patient = Patient::accessibleBy($user)->find($this->patientId);
         
         if ($patient) {
             $this->first_name = $patient->first_name;
@@ -175,9 +177,11 @@ class AddPatientModal extends Component
                 'chronic_conditions' => $this->chronic_conditions,
             ];
             
+            $user = Auth::user();
+            
             if ($this->isEditMode) {
-                // Hasta güncelleme
-                $patient = Patient::find($this->patientId);
+                // Hasta güncelleme - erişim kontrolü
+                $patient = Patient::accessibleBy($user)->find($this->patientId);
                 if ($patient) {
                     $patient->update($patientData);
                     $this->dispatch('patient-updated');
@@ -186,12 +190,13 @@ class AddPatientModal extends Component
                         'message' => 'Hasta bilgileri başarıyla güncellendi!'
                     ]);
                 } else {
-                    throw new \Exception('Hasta bulunamadı');
+                    throw new \Exception('Hasta bulunamadı veya erişim yetkiniz yok');
                 }
             } else {
-                // Yeni hasta ekleme
+                // Yeni hasta ekleme - doktor ID'si ata
                 $patientData['is_active'] = true;
                 $patientData['last_visit'] = now();
+                $patientData['doctor_id'] = $user->getDoctorIdForFiltering();
                 
                 $patient = Patient::create($patientData);
                 
@@ -200,7 +205,8 @@ class AddPatientModal extends Component
                     Activity::create([
                         'type' => 'new_patient_registration',
                         'description' => 'Yeni hasta kaydı ' . $patient->full_name . ' - ' . $patient->age . ' yaş',
-                        'patient_id' => $patient->id
+                        'patient_id' => $patient->id,
+                        'doctor_id' => $this->getDoctorIdForFiltering()
                     ]);
                     
                     $this->dispatch('patient-added');
@@ -231,6 +237,17 @@ class AddPatientModal extends Component
     public function updated($propertyName)
     {
         $this->validateOnly($propertyName);
+    }
+    
+    private function getDoctorIdForFiltering()
+    {
+        $user = Auth::user();
+        if ($user->role === 'doctor') {
+            return $user->id;
+        } elseif ($user->doctor_id) {
+            return $user->doctor_id;
+        }
+        return null;
     }
     
     public function render()

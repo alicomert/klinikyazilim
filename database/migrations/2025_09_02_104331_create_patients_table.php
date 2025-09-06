@@ -18,7 +18,7 @@ return new class extends Migration
             // Temel Bilgiler
             $table->string('first_name', 100)->index();
             $table->string('last_name', 100)->index();
-            $table->string('tc_identity', 11)->unique()->index();
+            $table->string('tc_identity', 255)->unique()->index();
             $table->string('phone', 20)->index();
             $table->date('birth_date')->index();
             $table->text('address')->nullable();

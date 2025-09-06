@@ -46,7 +46,7 @@ class OperationList extends Component
     protected $rules = [
         'newOperation.patient_id' => 'required|exists:patients,id',
         'newOperation.process' => 'required|in:surgery,mesotherapy,botox,filler',
-        'newOperation.process_detail' => 'required|string',
+        'newOperation.process_detail' => 'nullable|string',
         'newOperation.registration_period' => 'required|string'
     ];
 
@@ -55,7 +55,7 @@ class OperationList extends Component
         'newOperation.patient_id.exists' => 'Seçilen hasta bulunamadı.',
         'newOperation.process.required' => 'İşlem türü seçimi zorunludur.',
         'newOperation.process.in' => 'Geçersiz işlem türü.',
-        'newOperation.process_detail.required' => 'İşlem detayı zorunludur.',
+
         'newOperation.registration_period.required' => 'Kayıt dönemi zorunludur.'
     ];
 
@@ -124,10 +124,10 @@ class OperationList extends Component
             $this->filteredPatients = [];
         } else {
             // Veritabanından direkt arama yap
-            $this->filteredPatients = Patient::where(function($query) {
-                $query->where('first_name', 'like', '%' . $this->patientSearch . '%')
-                      ->orWhere('last_name', 'like', '%' . $this->patientSearch . '%')
-                      ->orWhereRaw('CONCAT(first_name, " ", last_name) LIKE ?', ['%' . $this->patientSearch . '%']);
+            $query = Patient::where(function($q) {
+                $q->where('first_name', 'like', '%' . $this->patientSearch . '%')
+                  ->orWhere('last_name', 'like', '%' . $this->patientSearch . '%')
+                  ->orWhereRaw('CONCAT(first_name, " ", last_name) LIKE ?', ['%' . $this->patientSearch . '%']);
                 
                 // TC kimlik arama
                 if (preg_match('/^[0-9]+$/', $this->patientSearch)) {
@@ -135,12 +135,25 @@ class OperationList extends Component
                     if (strlen($this->patientSearch) === 11) {
                         $patient = new Patient();
                         $encryptedTc = $patient->encryptField('tc_identity', $this->patientSearch);
-                        $query->orWhere('tc_identity', $encryptedTc);
+                        $q->orWhere('tc_identity', $encryptedTc);
                     }
                     // Kısmi TC arama için şifresiz arama da dene
-                    $query->orWhere('tc_identity', 'like', '%' . $this->patientSearch . '%');
+                    $q->orWhere('tc_identity', 'like', '%' . $this->patientSearch . '%');
                 }
-            })->orderBy('first_name')->orderBy('last_name')->get();
+            });
+            
+            // Doktor bazlı filtreleme
+            $user = Auth::user();
+            if ($user->role === 'doctor') {
+                $query->where('doctor_id', $user->id);
+            } elseif ($user->role === 'secretary') {
+                $query->where('doctor_id', $user->doctor_id);
+            } elseif ($user->role === 'nurse' && $user->doctor_id) {
+                $query->where('doctor_id', $user->doctor_id);
+            }
+            // Admin için tüm hastalar görünür (ek filtre yok)
+            
+            $this->filteredPatients = $query->orderBy('first_name')->orderBy('last_name')->get();
         }
     }
 
@@ -178,57 +191,116 @@ class OperationList extends Component
 
     public function getBotoxCountProperty()
     {
-        return Operation::where('process', 'botox')->count();
+        $user = auth()->user();
+        $query = Operation::where('process', 'botox');
+        
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        
+        return $query->count();
     }
 
     public function getFillerCountProperty()
     {
-        return Operation::where('process', 'filler')->count();
+        $user = auth()->user();
+        $query = Operation::where('process', 'filler');
+        
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        
+        return $query->count();
     }
 
     public function getTotalOperationsProperty()
     {
-        return Operation::count();
+        $user = auth()->user();
+        $query = Operation::query();
+        
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        
+        return $query->count();
     }
 
     public function getTodayOperationsProperty()
     {
+        $user = auth()->user();
         // Bugünkü kayıt dönemi için (registration_period'a göre)
         $todayPeriod = $this->convertToTurkishMonth(Carbon::today()->format('Y-m'));
-        return Operation::where('registration_period', $todayPeriod)->count();
+        $query = Operation::where('registration_period', $todayPeriod);
+        
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        
+        return $query->count();
     }
 
     public function getThisMonthOperationsProperty()
     {
+        $user = auth()->user();
         // Bu ayın kayıt dönemi için (registration_period'a göre)
         $currentPeriod = $this->convertToTurkishMonth(Carbon::now()->format('Y-m'));
-        return Operation::where('registration_period', $currentPeriod)->count();
+        $query = Operation::where('registration_period', $currentPeriod);
+        
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        
+        return $query->count();
     }
 
     public function getStatsProperty()
     {
+        $user = auth()->user();
         $currentYear = now()->year;
         $currentMonth = now()->month;
         $previousYear = $currentYear - 1;
         
+        // Doktor bazlı query oluştur
+        $operationQuery = Operation::query();
+        $patientQuery = \App\Models\Patient::query();
+        
+        if ($user->role === 'doctor') {
+            $operationQuery->where('doctor_id', $user->id);
+            $patientQuery->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $operationQuery->where('doctor_id', $user->doctor_id);
+            $patientQuery->where('doctor_id', $user->doctor_id);
+        }
+        // Admin tüm verileri görebilir (ek filtre yok)
+        
         // Bu yıl toplam operasyonlar (registration_period'a göre)
-        $thisYearOperations = Operation::where('registration_period', 'like', '%' . $currentYear)->count();
+        $thisYearOperations = (clone $operationQuery)->where('registration_period', 'like', '%' . $currentYear)->count();
         
         // Bu ay operasyonlar (registration_period'a göre)
         $currentPeriod = $this->convertToTurkishMonth(now()->format('Y-m'));
-        $thisMonthOperations = Operation::where('registration_period', $currentPeriod)->count();
+        $thisMonthOperations = (clone $operationQuery)->where('registration_period', $currentPeriod)->count();
         
         // Toplam operasyonlar
-        $totalOperations = Operation::count();
+        $totalOperations = (clone $operationQuery)->count();
         
         // Toplam hasta sayısı
-        $totalPatients = \App\Models\Patient::count();
+        $totalPatients = $patientQuery->count();
         
         // Geçen yıl aynı dönem karşılaştırması (registration_period'a göre)
         $previousYearSameMonthPeriod = $this->convertToTurkishMonth($previousYear . '-' . str_pad($currentMonth, 2, '0', STR_PAD_LEFT));
-        $previousYearSameMonth = Operation::where('registration_period', $previousYearSameMonthPeriod)->count();
+        $previousYearSameMonth = (clone $operationQuery)->where('registration_period', $previousYearSameMonthPeriod)->count();
         
-        $previousYearTotal = Operation::where('registration_period', 'like', '%' . $previousYear)->count();
+        $previousYearTotal = (clone $operationQuery)->where('registration_period', 'like', '%' . $previousYear)->count();
         
         // Yüzde hesaplamaları
         $monthlyPercentageChange = 0;
@@ -255,7 +327,9 @@ class OperationList extends Component
 
     public function loadOperations()
     {
-        $query = Operation::with(['patient', 'creator'])
+        $user = auth()->user();
+        
+        $query = Operation::with(['patient', 'creator', 'doctor'])
             ->when($this->searchTerm, function($q) {
                 $q->whereHas('patient', function($patientQuery) {
                     $patientQuery->where('first_name', 'like', '%' . $this->searchTerm . '%')
@@ -284,10 +358,15 @@ class OperationList extends Component
                 $q->where('registration_period', $this->filterRegistrationPeriod);
             });
 
-        // Yetki kontrolü
-        if (auth()->user()->role !== 'admin') {
-            $query->where('created_by', auth()->id());
+        // Doktor bazlı erişim kontrolü
+        if ($user->role === 'doctor') {
+            // Doktor sadece kendi operasyonlarını görebilir
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            // Sekreter sadece bağlı olduğu doktorun operasyonlarını görebilir
+            $query->where('doctor_id', $user->doctor_id);
         }
+        // Admin tüm operasyonları görebilir (ek filtre yok)
 
         $this->operations = $query->orderBy('process_date', 'desc')
                                  ->orderBy('created_at', 'desc')
@@ -296,14 +375,37 @@ class OperationList extends Component
 
     public function loadPatients()
     {
-        $this->patients = Patient::orderBy('first_name')
-                                ->orderBy('last_name')
-                                ->get();
+        $user = auth()->user();
+        $query = Patient::orderBy('first_name')
+                       ->orderBy('last_name');
+        
+        // Doktor bazlı hasta filtreleme
+        if ($user->role === 'doctor') {
+            // Doktor sadece kendi hastalarını görebilir
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            // Sekreter sadece bağlı olduğu doktorun hastalarını görebilir
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        // Admin tüm hastaları görebilir (ek filtre yok)
+        
+        $this->patients = $query->get();
     }
 
     public function create()
     {
         $this->validate();
+        
+        $user = auth()->user();
+        
+        // Doktor ID'sini belirle
+        $doctorId = null;
+        if ($user->role === 'doctor') {
+            $doctorId = $user->id;
+        } elseif ($user->role === 'secretary') {
+            $doctorId = $user->doctor_id;
+        }
+        // Admin için doctor_id null kalabilir veya seçilebilir
 
         $operation = Operation::create([
             'patient_id' => $this->newOperation['patient_id'],
@@ -311,14 +413,16 @@ class OperationList extends Component
             'process_detail' => $this->newOperation['process_detail'],
             'process_date' => Carbon::today(),
             'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period']),
-            'created_by' => auth()->id()
+            'created_by' => auth()->id(),
+            'doctor_id' => $doctorId
         ]);
 
         // Activities tablosuna kayıt ekle
         Activity::create([
             'type' => 'operation_added',
             'description' => 'Yeni operasyon eklendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
-            'patient_id' => $this->newOperation['patient_id']
+            'patient_id' => $this->newOperation['patient_id'],
+            'doctor_id' => $doctorId
         ]);
 
         $this->closeModal();
@@ -365,10 +469,14 @@ class OperationList extends Component
         ]);
 
         // Activities tablosuna kayıt ekle
+        $user = auth()->user();
+        $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+        
         Activity::create([
             'type' => 'operation_updated',
             'description' => 'Operasyon güncellendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
-            'patient_id' => $this->newOperation['patient_id']
+            'patient_id' => $this->newOperation['patient_id'],
+            'doctor_id' => $doctorId
         ]);
 
         $this->closeModal();
@@ -387,10 +495,14 @@ class OperationList extends Component
         }
 
         // Activities tablosuna kayıt ekle (silmeden önce)
+        $user = auth()->user();
+        $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+        
         Activity::create([
             'type' => 'operation_deleted',
             'description' => 'Operasyon silindi: ' . $operation->process . ' - ' . substr($operation->process_detail, 0, 50) . (strlen($operation->process_detail) > 50 ? '...' : ''),
-            'patient_id' => $operation->patient_id
+            'patient_id' => $operation->patient_id,
+            'doctor_id' => $doctorId
         ]);
 
         $operation->delete();
@@ -495,8 +607,8 @@ class OperationList extends Component
     {
         $user = Auth::user();
         
-        $this->operationNotes = OperationNote::where('operation_id', $operationId)
-            ->with('user')
+        $query = OperationNote::where('operation_id', $operationId)
+            ->with(['user', 'doctor'])
             ->where(function($query) use ($user) {
                 // Public notları göster
                 $query->where('is_private', false)
@@ -505,9 +617,19 @@ class OperationList extends Component
                         $subQuery->where('is_private', true)
                                 ->where('user_id', $user->id);
                     });
-            })
-            ->orderBy('created_at', 'desc')
-            ->get();
+            });
+            
+        // Doktor bazlı not filtreleme
+        if ($user->role === 'doctor') {
+            // Doktor sadece kendi notlarını görebilir
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            // Sekreter sadece bağlı olduğu doktorun notlarını görebilir
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        // Admin tüm notları görebilir (ek filtre yok)
+        
+        $this->operationNotes = $query->orderBy('created_at', 'desc')->get();
     }
 
     public function saveNote()
@@ -542,7 +664,8 @@ class OperationList extends Component
             Activity::create([
                 'type' => 'operation_note_updated',
                 'description' => 'Operasyon notu güncellendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
-                'patient_id' => $note->operation->patient_id
+                'patient_id' => $note->operation->patient_id,
+                'doctor_id' => $doctorId
             ]);
 
             $this->dispatch('show-toast', [
@@ -551,9 +674,20 @@ class OperationList extends Component
             ]);
         } else {
             // Yeni not ekleme
+            $user = Auth::user();
+            
+            // Doktor ID'sini belirle
+            $doctorId = null;
+            if ($user->role === 'doctor') {
+                $doctorId = $user->id;
+            } elseif ($user->role === 'secretary') {
+                $doctorId = $user->doctor_id;
+            }
+            
             $operationNote = OperationNote::create([
                 'operation_id' => $this->selectedOperationForNotes->id,
                 'user_id' => Auth::id(),
+                'doctor_id' => $doctorId,
                 'content' => $this->newNote['content'],
                 'note_type' => $this->newNote['note_type'],
                 'is_private' => $this->newNote['is_private'],
@@ -565,7 +699,8 @@ class OperationList extends Component
             Activity::create([
                 'type' => 'operation_note_added',
                 'description' => 'Operasyon notu eklendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
-                'patient_id' => $this->selectedOperationForNotes->patient_id
+                'patient_id' => $this->selectedOperationForNotes->patient_id,
+                'doctor_id' => $doctorId
             ]);
 
             $this->dispatch('show-toast', [
@@ -612,10 +747,14 @@ class OperationList extends Component
         }
 
         // Activities tablosuna kayıt ekle (silmeden önce)
+        $user = auth()->user();
+        $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+        
         Activity::create([
             'type' => 'operation_note_deleted',
             'description' => 'Operasyon notu silindi: ' . substr($note->content, 0, 50) . (strlen($note->content) > 50 ? '...' : ''),
-            'patient_id' => $note->operation->patient_id
+            'patient_id' => $note->operation->patient_id,
+            'doctor_id' => $doctorId
         ]);
 
         $note->delete();
@@ -744,7 +883,16 @@ class OperationList extends Component
     
     private function getProcessCount($process, $period, $isPrevious = false)
     {
+        $user = auth()->user();
         $query = Operation::where('process', $process);
+        
+        // Doktor bazlı filtreleme ekle
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif ($user->role === 'secretary') {
+            $query->where('doctor_id', $user->doctor_id);
+        }
+        // Admin tüm verileri görebilir (ek filtre yok)
         
         switch ($period) {
             case 'monthly':

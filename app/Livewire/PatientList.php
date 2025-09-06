@@ -114,32 +114,42 @@ class PatientList extends Component
 
     public function getStatsProperty()
     {
+        $user = Auth::user();
+        $baseQuery = Patient::accessibleBy($user);
+        
         return [
-            'total_patients' => Patient::count(),
-            'new_patients_this_month' => Patient::whereMonth('created_at', now()->month)
+            'total_patients' => $baseQuery->count(),
+            'new_patients_this_month' => $baseQuery->whereMonth('created_at', now()->month)
                                               ->whereYear('created_at', now()->year)
                                               ->count(),
-            'active_treatments' => Patient::where('is_active', true)->count(),
+            'active_treatments' => $baseQuery->where('is_active', true)->count(),
             'today_appointments' => 0 // Bu randevu sistemi eklendiğinde güncellenecek
         ];
     }
 
     public function render()
     {
-        $query = Patient::query();
+        $user = Auth::user();
+        $query = Patient::accessibleBy($user);
 
         // Arama filtresi
         if ($this->search) {
             $query->where(function($q) {
                 $q->where('first_name', 'like', '%' . $this->search . '%')
                   ->orWhere('last_name', 'like', '%' . $this->search . '%')
+                  ->orWhereRaw('CONCAT(first_name, " ", last_name) LIKE ?', ['%' . $this->search . '%'])
                   ->orWhere('phone', 'like', '%' . $this->search . '%');
                 
-                // TC kimlik numarası şifrelenmiş arama
-                if (preg_match('/^[0-9]{11}$/', $this->search)) {
-                    $patient = new Patient();
-                    $encryptedTc = $patient->encryptField('tc_identity', $this->search);
-                    $q->orWhere('tc_identity', $encryptedTc);
+                // TC kimlik numarası arama - hem tam hem kısmi
+                if (preg_match('/^[0-9]+$/', $this->search)) {
+                    // Tam TC kimlik (11 haneli) için şifrelenmiş arama
+                    if (strlen($this->search) === 11) {
+                        $patient = new Patient();
+                        $encryptedTc = $patient->encryptField('tc_identity', $this->search);
+                        $q->orWhere('tc_identity', $encryptedTc);
+                    }
+                    // Kısmi TC arama için LIKE sorgusu
+                    $q->orWhere('tc_identity', 'like', '%' . $this->search . '%');
                 }
             });
         }
@@ -294,15 +304,8 @@ class PatientList extends Component
         
         $this->patientNotes = PatientNote::where('patient_id', $patientId)
             ->with('user')
-            ->where(function($query) use ($user) {
-                // Public notları göster
-                $query->where('is_private', false)
-                    // Veya kullanıcının kendi private notlarını göster
-                    ->orWhere(function($subQuery) use ($user) {
-                        $subQuery->where('is_private', true)
-                                ->where('user_id', $user->id);
-                    });
-            })
+            ->accessibleBy($user)
+            ->visibleTo($user)
             ->orderBy('created_at', 'desc')
             ->get();
     }
@@ -314,6 +317,8 @@ class PatientList extends Component
             'newNote.note_type' => 'required|string',
             'newNote.is_private' => 'boolean'
         ]);
+
+        $user = auth()->user();
 
         if ($this->editingNote) {
             // Düzenleme işlemi
@@ -336,10 +341,13 @@ class PatientList extends Component
             ]);
 
             // Activities tablosuna kayıt ekle
+            $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+            
             Activity::create([
                 'type' => 'patient_note_updated',
                 'description' => 'Hasta notu güncellendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
-                'patient_id' => $this->selectedPatientForNotes->id
+                'patient_id' => $this->selectedPatientForNotes->id,
+                'doctor_id' => $doctorId
             ]);
 
             $this->dispatch('show-toast', [
@@ -348,8 +356,11 @@ class PatientList extends Component
             ]);
         } else {
             // Yeni not ekleme
+            // Hasta erişim kontrolü
+            $patient = Patient::accessibleBy($user)->findOrFail($this->selectedPatientForNotes->id);
+            
             $patientNote = PatientNote::create([
-                'patient_id' => $this->selectedPatientForNotes->id,
+                'patient_id' => $patient->id,
                 'user_id' => Auth::id(),
                 'content' => $this->newNote['content'],
                 'note_type' => $this->newNote['note_type'],
@@ -359,10 +370,13 @@ class PatientList extends Component
             ]);
 
             // Activities tablosuna kayıt ekle
+            $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+            
             Activity::create([
                 'type' => 'patient_note_added',
                 'description' => 'Hasta notu eklendi: ' . substr($this->newNote['content'], 0, 50) . (strlen($this->newNote['content']) > 50 ? '...' : ''),
-                'patient_id' => $this->selectedPatientForNotes->id
+                'patient_id' => $this->selectedPatientForNotes->id,
+                'doctor_id' => $doctorId
             ]);
 
             $this->dispatch('show-toast', [
@@ -409,10 +423,14 @@ class PatientList extends Component
         }
 
         // Activities tablosuna kayıt ekle (silmeden önce)
+        $user = auth()->user();
+        $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
+        
         Activity::create([
             'type' => 'patient_note_deleted',
             'description' => 'Hasta notu silindi: ' . substr($note->content, 0, 50) . (strlen($note->content) > 50 ? '...' : ''),
-            'patient_id' => $note->patient_id
+            'patient_id' => $note->patient_id,
+            'doctor_id' => $doctorId
         ]);
 
         $note->delete();

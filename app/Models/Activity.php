@@ -11,6 +11,7 @@ class Activity extends Model
         'type',
         'description',
         'patient_id',
+        'doctor_id',
     ];
 
     /**
@@ -19,5 +20,13 @@ class Activity extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    /**
+     * Aktivitenin ait olduğu doktor
+     */
+    public function doctor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'doctor_id');
     }
 }
