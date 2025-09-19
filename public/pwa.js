@@ -52,7 +52,7 @@ function showInstallButton() {
             <i class="fas fa-download mr-2"></i>
             Uygulamayı Yükle
         `;
-        installBtn.className = 'fixed bottom-4 right-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-300 z-50 flex items-center';
+        installBtn.className = 'fixed bottom-20 right-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-lg transition-all duration-300 z-40 flex items-center md:bottom-4 md:z-50';
         installBtn.style.display = 'flex';
         
         // Add click event

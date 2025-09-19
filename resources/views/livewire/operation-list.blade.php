@@ -97,28 +97,28 @@
     </div>
 
     <!-- İşlem Türü İstatistikleri -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 card-shadow">
+    <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6 card-shadow">
         <!-- Dönem Seçici -->
-        <div class="flex justify-between items-center mb-6">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 space-y-4 sm:space-y-0">
             <h3 class="text-lg font-semibold text-gray-800">İşlem Türü İstatistikleri</h3>
-            <div class="flex space-x-2">
+            <div class="grid grid-cols-2 sm:flex sm:space-x-2 gap-2 sm:gap-0">
                 <button wire:click="changeStatsPeriod('monthly')" 
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                        class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors
                                {{ $statsPeriod === 'monthly' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                     Aylık
                 </button>
                 <button wire:click="changeStatsPeriod('yearly')" 
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                        class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors
                                {{ $statsPeriod === 'yearly' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                     Yıllık
                 </button>
                 <button wire:click="changeStatsPeriod('this_year')" 
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                        class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors
                                {{ $statsPeriod === 'this_year' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                     Bu Yıl
                 </button>
                 <button wire:click="changeStatsPeriod('all')" 
-                        class="px-4 py-2 rounded-lg text-sm font-medium transition-colors
+                        class="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors
                                {{ $statsPeriod === 'all' ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
                     Tümü
                 </button>
@@ -126,7 +126,7 @@
         </div>
 
         <!-- İşlem Türü Kartları -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             @foreach($this->processStats as $processKey => $stat)
                 <div class="bg-gradient-to-br from-{{ $loop->index % 4 === 0 ? 'blue' : ($loop->index % 4 === 1 ? 'green' : ($loop->index % 4 === 2 ? 'purple' : 'pink')) }}-50 to-{{ $loop->index % 4 === 0 ? 'blue' : ($loop->index % 4 === 1 ? 'green' : ($loop->index % 4 === 2 ? 'purple' : 'pink')) }}-100 rounded-lg p-4 border border-{{ $loop->index % 4 === 0 ? 'blue' : ($loop->index % 4 === 1 ? 'green' : ($loop->index % 4 === 2 ? 'purple' : 'pink')) }}-200">
                     <div class="flex items-center justify-between mb-2">
@@ -159,33 +159,41 @@
     </div>
 
     <!-- Search and Filter Section -->
-    <div class="bg-white rounded-lg shadow-sm p-6 mb-6 card-shadow">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div class="flex-1 max-w-md">
+    <div class="bg-white rounded-lg shadow-sm p-4 sm:p-6 mb-6 card-shadow">
+        <div class="space-y-4">
+            <!-- Search Bar -->
+            <div class="w-full">
                 <div class="relative">
                     <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
                     <input type="text" wire:model.live.debounce.300ms="searchTerm" placeholder="Hasta adı, TC kimlik, işlem detayı ile ara..." 
                            class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
                 </div>
             </div>
-            <div class="flex items-center space-x-3">
-                <select wire:model.live="filterProcess" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    <option value="">Tüm İşlemler</option>
-                    <option value="surgery">Ameliyat</option>
-                    <option value="mesotherapy">Mezoterapi</option>
-                    <option value="botox">Botoks</option>
-                    <option value="filler">Dolgu</option>
-                </select>
-                <select wire:model.live="filterRegistrationPeriod" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-                    <option value="">Tüm Dönemler</option>
-                    @foreach($this->getAvailablePeriods() as $period)
-                        <option value="{{ $period }}">{{ $period }}</option>
-                    @endforeach
-                </select>
+            
+            <!-- Filters and Add Button -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <!-- Filters -->
+                <div class="flex flex-col sm:flex-row gap-3 flex-1">
+                    <select wire:model.live="filterProcess" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">Tüm İşlemler</option>
+                        <option value="surgery">Ameliyat</option>
+                        <option value="mesotherapy">Mezoterapi</option>
+                        <option value="botox">Botoks</option>
+                        <option value="filler">Dolgu</option>
+                    </select>
+                    <select wire:model.live="filterRegistrationPeriod" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="">Tüm Dönemler</option>
+                        @foreach($this->getAvailablePeriods() as $period)
+                            <option value="{{ $period }}">{{ $period }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <!-- Add Button -->
                 <button wire:click="$set('showModal', true)" 
                         wire:loading.attr="disabled"
                         wire:loading.class="opacity-50 cursor-not-allowed"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center whitespace-nowrap">
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center w-full sm:w-auto">
                     <i class="fas fa-plus mr-2" wire:loading.remove wire:target="$set('showModal', true)"></i>
                     <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="$set('showModal', true)"></i>
                     <span wire:loading.remove wire:target="$set('showModal', true)">Yeni Operasyon</span>
@@ -198,6 +206,7 @@
     <div class="bg-white rounded-lg shadow-sm overflow-hidden card-shadow" x-data="{ 
         columns: JSON.parse(localStorage.getItem('operationListColumns')) || {
             operationInfo: true,
+            operationType: true,
             patientInfo: true,
             registrationPeriod: true,
             actions: true
@@ -206,10 +215,10 @@
             localStorage.setItem('operationListColumns', JSON.stringify(this.columns));
         }
     }">
-        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <h3 class="text-lg font-semibold text-gray-800">Operasyon Listesi</h3>
             <div class="relative" x-data="{ open: false }">
-                <button @click="open = !open" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center">
+                <button @click="open = !open" class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center w-full sm:w-auto justify-center">
                     <i class="fas fa-columns mr-2"></i>
                     Sütunlar
                     <i class="fas fa-chevron-down ml-2 text-xs" :class="{ 'rotate-180': open }"></i>
@@ -219,6 +228,10 @@
                         <label class="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" x-model="columns.operationInfo" @change="saveColumns()" class="mr-3 rounded">
                             <span class="text-sm text-gray-700">Operasyon Bilgileri</span>
+                        </label>
+                        <label class="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer">
+                            <input type="checkbox" x-model="columns.operationType" @change="saveColumns()" class="mr-3 rounded">
+                            <span class="text-sm text-gray-700">İşlem Tipi</span>
                         </label>
                         <label class="flex items-center px-4 py-2 hover:bg-gray-50 cursor-pointer">
                             <input type="checkbox" x-model="columns.patientInfo" @change="saveColumns()" class="mr-3 rounded">
@@ -237,11 +250,72 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <!-- Mobile Card View -->
+        <div class="block sm:hidden">
+            @forelse($operations as $operation)
+                <div class="border-b border-gray-200 p-4 hover:bg-gray-50">
+                    <div class="flex items-start space-x-3">
+                        <div class="flex-shrink-0 h-12 w-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
+                            <i class="fas fa-procedures text-blue-600 dark:text-blue-400"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-sm font-medium text-gray-900 truncate">
+                                {{ $operation->process_label }}
+                            </div>
+                            <div class="text-sm text-gray-500">{{ $operation->process_date->format('d.m.Y') }}</div>
+                            <div class="text-xs text-gray-400 truncate">{{ $operation->process_detail }}</div>
+                            <div class="text-xs text-blue-600 font-medium mt-1">
+                                İşlem Tipi: 
+                                @if($operation->process_type && $operation->operationType)
+                                    {{ $operation->operationType->name }}
+                                @else
+                                    {{ $operation->process ? ucfirst(str_replace('_', ' ', $operation->process)) : 'Belirtilmemiş' }}
+                                @endif
+                            </div>
+                            <div class="text-sm text-gray-600 mt-1">{{ $operation->patient->first_name }} {{ $operation->patient->last_name }}</div>
+                            <div class="text-xs text-gray-500">TC: {{ substr($operation->patient->tc_identity, 0, 3) }}***{{ substr($operation->patient->tc_identity, -2) }}</div>
+                            <div class="text-xs text-gray-500">Dönem: {{ $operation->registration_period }}</div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-3">
+                        <button wire:click="showNotes({{ $operation->id }})" 
+                                class="text-purple-600 hover:text-purple-800 p-2 hover:bg-purple-100 rounded-full transition-colors duration-200" 
+                                title="Notlar">
+                            <i class="fas fa-sticky-note"></i>
+                        </button>
+                        <button wire:click="edit({{ $operation->id }})" 
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-50 cursor-not-allowed"
+                                class="text-yellow-600 hover:text-yellow-800 p-2 hover:bg-yellow-100 rounded-full transition-colors duration-200" 
+                                title="Düzenle">
+                            <i class="fas fa-edit" wire:loading.remove wire:target="edit"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="edit"></i>
+                        </button>
+                        <button @click="$dispatch('confirm-delete', { operationId: {{ $operation->id }}, operationName: '{{ $operation->process_label }}' })" 
+                                class="text-red-600 hover:text-red-800 p-2 hover:bg-red-100 rounded-full transition-colors duration-200" 
+                                title="Sil">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            @empty
+                <div class="px-4 py-12 text-center">
+                    <div class="text-gray-500">
+                        <i class="fas fa-procedures text-4xl mb-4"></i>
+                        <p class="text-lg font-medium">Henüz operasyon kaydı bulunmuyor</p>
+                        <p class="text-sm">İlk operasyonunuzu eklemek için yukarıdaki "Yeni Operasyon" butonunu kullanın.</p>
+                    </div>
+                </div>
+            @endforelse
+        </div>
+
+        <!-- Desktop Table View -->
+        <div class="hidden sm:block overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                 <thead class="bg-gray-50">
                     <tr>
                         <th x-show="columns.operationInfo" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operasyon Bilgileri</th>
+                        <th x-show="columns.operationType" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlem Tipi</th>
                         <th x-show="columns.patientInfo" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hasta Bilgileri</th>
                         <th x-show="columns.registrationPeriod" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kayıt Dönemi</th>
                         <th x-show="columns.actions" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">İşlemler</th>
@@ -262,6 +336,15 @@
                                         <div class="text-sm text-gray-500">{{ $operation->process_date->format('d.m.Y') }}</div>
                                         <div class="text-xs text-gray-400">{{ Str::limit($operation->process_detail, 30) }}</div>
                                     </div>
+                                </div>
+                            </td>
+                            <td x-show="columns.operationType" class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">
+                                    @if($operation->process_type && $operation->operationType)
+                                        {{ $operation->operationType->name }}
+                                    @else
+                                        {{ $operation->process ? ucfirst(str_replace('_', ' ', $operation->process)) : 'Belirtilmemiş' }}
+                                    @endif
                                 </div>
                             </td>
                             <td x-show="columns.patientInfo" class="px-6 py-4 whitespace-nowrap">
@@ -637,18 +720,59 @@
                                 @error('newOperation.patient_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
-                            <!-- İşlem Türü -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Türü *</label>
-                                <select wire:model="newOperation.process" 
-                                        class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="">İşlem Türü Seçiniz</option>
-                                    <option value="surgery">Ameliyat</option>
-                                    <option value="mesotherapy">Mezoterapi</option>
-                                    <option value="botox">Botoks</option>
-                                    <option value="filler">Dolgu</option>
-                                </select>
-                                @error('newOperation.process') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <!-- İşlem Süreci -->
+            <div class="mb-4">
+                <label for="process" class="block text-sm font-medium text-gray-700 mb-2">İşlem Süreci</label>
+                <select wire:model.live="newOperation.process" id="process" class="w-full px-3 py-2 border @error('newOperation.process') border-red-500 @else border-gray-300 @enderror rounded-md focus:outline-none focus:ring-2 @error('newOperation.process') focus:ring-red-500 @else focus:ring-blue-500 @enderror">
+                    <option value="">İşlem Süreci Seçin</option>
+                    @foreach($processOptions as $value => $label)
+                        <option value="{{ $value }}">{{ $label }}</option>
+                    @endforeach
+                </select>
+                @error('newOperation.process') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+            </div>
+
+                            <!-- İşlem Tipi -->
+                            <div class="relative" x-data="{ open: @entangle('showOperationTypeDropdown') }" x-on:click.outside="open = false">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Tipi *</label>
+                                <div class="relative">
+                                    <!-- Arama Input'u -->
+                                    <div class="flex">
+                                        <input type="text" 
+                                               wire:model.live="operationTypeSearch"
+                                               x-on:focus="open = true"
+                                               placeholder="İşlem türü ara veya seç..."
+                                               class="flex-1 border @error('selectedOperationType') border-red-500 @else border-gray-300 @enderror rounded-l-md px-3 py-2 focus:outline-none focus:ring-2 @error('selectedOperationType') focus:ring-red-500 @else focus:ring-blue-500 @enderror">
+                                        <button type="button" 
+                                                wire:click="openAddOperationTypeModal"
+                                                class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-r-md border border-green-500 focus:outline-none focus:ring-2 focus:ring-green-500"
+                                                title="Yeni İşlem Türü Ekle">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Dropdown Listesi -->
+                                    <div x-show="open && {{ count($operationTypes ?? []) }} > 0" 
+                                         x-transition
+                                         class="absolute z-10 w-full bg-white border border-gray-300 rounded-md shadow-lg mt-1 max-h-48 overflow-y-auto">
+                                        @if(isset($operationTypes))
+                                            @foreach($operationTypes as $operationType)
+                                                <!-- İşlem Tipi -->
+                                                <div wire:click="selectOperationType({{ $operationType->id }})"
+                                                     x-on:click="open = false"
+                                                     class="px-3 py-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 {{ $selectedOperationType == $operationType->id ? 'bg-blue-100' : '' }}">
+                                                    <div class="font-medium text-gray-900">{{ $operationType->name }}</div>
+                                                    @if($operationType->description)
+                                                        <div class="text-sm text-gray-500">{{ $operationType->description }}</div>
+                                                    @endif
+                                                </div>
+                                                
+                                                <!-- Operation details under type removed (confirmed) -->
+                                            @endforeach
+                                        @endif
+                                    </div>
+                                </div>
+                                @error('selectedOperationType') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
                             <!-- Kayıt Dönemi -->
@@ -662,10 +786,8 @@
 
                             <!-- İşlem Detayı -->
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Detayı *</label>
-                                <textarea wire:model="newOperation.process_detail" rows="3" 
-                                          class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                          placeholder="İşlem detaylarını açıklayınız..."></textarea>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Detayı</label>
+                                <textarea wire:model="newOperation.process_detail" rows="3" placeholder="İşlemle ilgili detayları yazın..." class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
                                 @error('newOperation.process_detail') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
@@ -766,10 +888,257 @@
         </div>
     </div>
     @endif
+
+    <!-- Yeni İşlem Türü Ekleme Modalı -->
+    @if($showAddOperationTypeModal)
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" wire:click="closeAddOperationTypeModal">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white" wire:click.stop>
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        {{ $editingOperationType ? 'İşlem Türü Düzenle' : 'İşlem Türü Yönetimi' }}
+                    </h3>
+                    <button wire:click="closeAddOperationTypeModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Mevcut İşlem Türleri Listesi -->
+                @if(!$editingOperationType)
+                <div class="mb-6">
+                    <h4 class="text-md font-medium text-gray-800 mb-3">Mevcut İşlem Türleri</h4>
+                    <div class="max-h-48 overflow-y-auto border border-gray-200 rounded-md">
+                        @if(count($operationTypes) > 0)
+                            @foreach($operationTypes as $type)
+                                <div class="flex justify-between items-center p-3 border-b border-gray-100 hover:bg-gray-50">
+                                    <div>
+                                        <span class="font-medium text-gray-900">{{ $type['name'] }}</span>
+                                        <span class="text-sm text-gray-500 ml-2">({{ $type['value'] }})</span>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button wire:click="editOperationType('{{ $type['value'] }}')" 
+                                                class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded">
+                                            Düzenle
+                                        </button>
+                                        <button wire:click="deleteOperationType('{{ $type['value'] }}')" 
+                                                wire:confirm="Bu işlem türünü silmek istediğinizden emin misiniz?"
+                                                class="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">
+                                            Sil
+                                        </button>
+                                    </div>
+                                </div>
+                            @endforeach
+                        @else
+                            <div class="p-4 text-center text-gray-500">
+                                Henüz işlem türü eklenmemiş.
+                            </div>
+                        @endif
+                    </div>
+                </div>
+                @endif
+
+                <!-- İşlem Türü Ekleme/Düzenleme Formu -->
+                <div class="border-t pt-4">
+                    <h4 class="text-md font-medium text-gray-800 mb-3">
+                        {{ $editingOperationType ? 'İşlem Türü Düzenle' : 'Yeni İşlem Türü Ekle' }}
+                    </h4>
+                    
+                <form wire:submit.prevent="{{ $editingOperationType ? 'updateOperationType' : 'createOperationType' }}">
+                    <div class="space-y-4">
+                        <!-- İşlem Türü Adı -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Türü Adı *</label>
+                            <input type="text" wire:model="operationTypeForm.name" 
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Örn: Lazer Epilasyon">
+                            @error('operationTypeForm.name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <p class="text-xs text-gray-500 mt-1">İşlem türü değeri otomatik olarak bu isimden oluşturulacaktır</p>
+                        </div>
+
+
+                    </div>
+
+                    <div class="flex justify-end space-x-3 mt-6">
+                        @if($editingOperationType)
+                            <button type="button" wire:click="resetOperationTypeForm" 
+                                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                                İptal
+                            </button>
+                        @else
+                            <button type="button" wire:click="closeAddOperationTypeModal" 
+                                    class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                                Kapat
+                            </button>
+                        @endif
+                        <button type="submit" 
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            {{ $editingOperationType ? 'Güncelle' : 'Kaydet' }}
+                        </button>
+                    </div>
+                </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- İşlem Süreci Ekleme Modal'ı -->
+    @if($showAddProcessModal)
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Yeni İşlem Süreci Ekle</h3>
+                
+                <form wire:submit.prevent="addProcess">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Süreci Adı *</label>
+                            <input type="text" 
+                                   wire:model="newProcess.name"
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="İşlem süreci adını girin...">
+                            @error('newProcess.name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Değer (Kod) *</label>
+                            <input type="text" 
+                                   wire:model="newProcess.value"
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Örn: pre_operation, post_operation">
+                            @error('newProcess.value') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Açıklama</label>
+                            <textarea wire:model="newProcess.description"
+                                      rows="3"
+                                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      placeholder="İşlem süreci hakkında açıklama..."></textarea>
+                            @error('newProcess.description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button" wire:click="closeAddProcessModal" 
+                                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            İptal
+                        </button>
+                        <button type="submit" 
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    <!-- Yeni İşlem Detayı Ekleme Modalı -->
+    @if($showAddOperationDetailModal)
+    <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" wire:click="closeAddOperationDetailModal">
+        <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 lg:w-1/3 shadow-lg rounded-md bg-white" wire:click.stop>
+            <div class="mt-3">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900">
+                        {{ $editingOperationDetail ? 'İşlem Detayını Düzenle' : 'Yeni İşlem Detayı Ekle' }}
+                    </h3>
+                    <button wire:click="closeAddOperationDetailModal" class="text-gray-400 hover:text-gray-600">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <form wire:submit.prevent="createOperationDetail">
+                    <div class="space-y-4">
+                        <!-- Seçili İşlem Türü Bilgisi -->
+                        @if($selectedOperationType)
+                            @php
+                                $selectedType = $operationTypes->firstWhere('id', $selectedOperationType);
+                            @endphp
+                            <div class="bg-blue-50 p-3 rounded-md">
+                                <p class="text-sm text-blue-800">
+                                    <strong>İşlem Türü:</strong> {{ $selectedType->name ?? 'Bilinmiyor' }}
+                                </p>
+                            </div>
+                        @endif
+
+                        <!-- İşlem Detayı Adı -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Detayı Adı *</label>
+                            <input type="text" wire:model="newOperationDetail.name" 
+                                   class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                   placeholder="Örn: Bacak Lazer Epilasyon">
+                            @error('newOperationDetail.name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Açıklama -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Açıklama</label>
+                            <textarea wire:model="newOperationDetail.description" rows="3"
+                                      class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      placeholder="İşlem detayı hakkında açıklama..."></textarea>
+                            @error('newOperationDetail.description') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button type="button" wire:click="closeAddOperationDetailModal" 
+                                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                            İptal
+                        </button>
+                        <button type="submit" 
+                                class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                            Kaydet
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    @endif
+
+
     
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed top-4 right-4 z-50 hidden">
+        <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+            <span id="toast-message"></span>
+        </div>
+    </div>
 </div>
 
 <script>
+    // Toast notification function
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        const toastMessage = document.getElementById('toast-message');
+        const toastDiv = toast.querySelector('div');
+        
+        toastMessage.textContent = message;
+        
+        // Set color based on type
+        if (type === 'success') {
+            toastDiv.className = 'bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2';
+        } else if (type === 'error') {
+            toastDiv.className = 'bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg flex items-center space-x-2';
+        }
+        
+        toast.classList.remove('hidden');
+        
+        // Hide after 3 seconds
+        setTimeout(() => {
+            toast.classList.add('hidden');
+        }, 3000);
+    }
+
     // LocalStorage ile dönem seçimini kaydet
     document.addEventListener('DOMContentLoaded', function() {
         // Sayfa yüklendiğinde localStorage'dan dönem seçimini al
@@ -782,5 +1151,14 @@
         Livewire.on('statsperiodchanged', function(period) {
             localStorage.setItem('operation_stats_period', period);
         });
+
+        // Session flash mesajlarını toast olarak göster
+        @if (session()->has('message'))
+            showToast('{{ session('message') }}', 'success');
+        @endif
+
+        @if (session()->has('error'))
+            showToast('{{ session('error') }}', 'error');
+        @endif
     });
 </script>

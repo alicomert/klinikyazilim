@@ -19,6 +19,8 @@ class Patient extends Model
         'phone',
         'birth_date',
         'address',
+        'registration_date',
+        'needs_paid',
         'medications',
         'allergies',
         'previous_operations',
@@ -43,7 +45,9 @@ class Patient extends Model
     
     protected $casts = [
         'birth_date' => 'date',
+        'registration_date' => 'datetime',
         'last_visit' => 'datetime',
+        'needs_paid' => 'decimal:2',
         'is_active' => 'boolean'
     ];
     
@@ -80,6 +84,14 @@ class Patient extends Model
     }
 
     /**
+     * Hasta ödemeleri
+     */
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    /**
      * Doktor ilişkisi
      */
     public function doctor()
@@ -87,6 +99,22 @@ class Patient extends Model
         return $this->belongsTo(User::class, 'doctor_id');
     }
     
+    /**
+     * Needs paid mutator - boş değerleri 0 yap
+     */
+    public function setNeedsPaidAttribute($value)
+    {
+        $this->attributes['needs_paid'] = $value === null || $value === '' ? 0 : $value;
+    }
+
+    /**
+     * Needs paid accessor - null değerleri 0 döndür
+     */
+    public function getNeedsPaidAttribute($value)
+    {
+        return $value === null ? 0 : $value;
+    }
+
     /**
      * Tam adı döndür
      */

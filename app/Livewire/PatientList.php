@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\Patient;
 use App\Models\PatientNote;
+use App\Models\Payment;
 use App\Models\Activity;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -31,6 +32,17 @@ class PatientList extends Component
         'is_private' => false
     ];
     public $editingNote = null;
+    
+    // Ödeme yönetimi
+    public $showPaymentsModal = false;
+    public $selectedPatientForPayments = null;
+    public $patientPayments = [];
+    public $paymentToDelete = null;
+    public $newPayment = [
+        'payment_method' => 'nakit',
+        'paid_amount' => '',
+        'notes' => ''
+    ];
 
     protected $paginationTheme = 'tailwind';
     protected $listeners = [
@@ -517,5 +529,236 @@ class PatientList extends Component
         }
         
         return true; // nurse/secretary birbirlerinin notlarını silebilir
+    }
+    
+    // Ödeme Yönetimi Methodları
+    public function showPayments($patientId)
+    {
+        $this->selectedPatientForPayments = Patient::findOrFail($patientId);
+        $this->loadPatientPayments();
+        $this->resetPaymentForm();
+        $this->showPaymentsModal = true;
+    }
+    
+    public function closePaymentsModal()
+    {
+        $this->showPaymentsModal = false;
+        $this->selectedPatientForPayments = null;
+        $this->patientPayments = [];
+        $this->resetPaymentForm();
+    }
+    
+    public function loadPatientPayments()
+    {
+        $this->patientPayments = Payment::with('user')
+            ->where('patient_id', $this->selectedPatientForPayments->id)
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function($payment) {
+                return [
+                    'id' => $payment->id,
+                    'payment_method' => $payment->payment_method,
+                    'paid_amount' => $payment->paid_amount,
+                    'notes' => $payment->notes,
+                    'created_at' => $payment->created_at,
+                    'user_id' => $payment->user_id,
+                    'user_name' => $payment->user ? $payment->user->name : 'Bilinmeyen'
+                ];
+            })
+            ->toArray();
+    }
+    
+    public function addPayment()
+    {
+        $this->validate([
+            'newPayment.payment_method' => 'required|in:nakit,kredi_karti,banka_havalesi,pos,diger',
+            'newPayment.paid_amount' => 'required|numeric|min:0.01',
+            'newPayment.notes' => 'nullable|string|max:500'
+        ], [
+            'newPayment.payment_method.required' => 'Ödeme yöntemi seçiniz.',
+            'newPayment.paid_amount.required' => 'Ödeme tutarı giriniz.',
+            'newPayment.paid_amount.numeric' => 'Ödeme tutarı sayısal olmalıdır.',
+            'newPayment.paid_amount.min' => 'Ödeme tutarı en az 0.01 TL olmalıdır.',
+            'newPayment.notes.max' => 'Not en fazla 500 karakter olabilir.'
+        ]);
+        
+        Payment::create([
+            'patient_id' => $this->selectedPatientForPayments->id,
+            'user_id' => auth()->id(),
+            'payment_method' => $this->newPayment['payment_method'],
+            'paid_amount' => $this->newPayment['paid_amount'],
+            'notes' => $this->newPayment['notes'],
+            'created_at' => now() // Otomatik tarih ekleme
+        ]);
+        
+        $this->loadPatientPayments($this->selectedPatientForPayments->id);
+        $this->resetPaymentForm();
+        
+        session()->flash('message', 'Ödeme başarıyla eklendi.');
+    }
+    
+    public function confirmDeletePayment()
+    {
+        if (!$this->paymentToDelete) {
+            return;
+        }
+        
+        $payment = Payment::findOrFail($this->paymentToDelete);
+        
+        // Yetki kontrolü
+        if (!$this->canDeletePayment($payment)) {
+            session()->flash('error', 'Bu ödemeyi silme yetkiniz yok.');
+            $this->paymentToDelete = null;
+            return;
+        }
+        
+        $payment->delete();
+        $this->loadPatientPayments();
+        $this->paymentToDelete = null;
+        
+        session()->flash('message', 'Ödeme başarıyla silindi.');
+    }
+    
+    public function cancelDeletePayment()
+    {
+        $this->paymentToDelete = null;
+    }
+    
+    public function resetPaymentForm()
+    {
+        $this->newPayment = [
+            'payment_method' => 'nakit',
+            'paid_amount' => '',
+            'notes' => ''
+        ];
+    }
+    
+    public function canDeletePayment($payment)
+    {
+        $user = auth()->user();
+        
+        // Admin her şeyi silebilir
+        if ($user->role === 'admin') {
+            return true;
+        }
+        
+        // Kullanıcı sadece kendi eklediği ödemeleri silebilir
+        return $payment->user_id === $user->id;
+    }
+    
+    public function getTotalPaidProperty()
+    {
+        if (!$this->selectedPatientForPayments) {
+            return 0;
+        }
+        
+        return Payment::where('patient_id', $this->selectedPatientForPayments->id)
+            ->sum('paid_amount');
+    }
+    
+    public function getRemainingAmountProperty()
+    {
+        if (!$this->selectedPatientForPayments || !$this->selectedPatientForPayments->needs_paid) {
+            return 0;
+        }
+        
+        return max(0, $this->selectedPatientForPayments->needs_paid - $this->totalPaid);
+    }
+    
+    /**
+     * Hastanın eksik bilgilerini kontrol eder
+     */
+    public function getMissingInfoBadges($patient)
+    {
+        $badges = [];
+        
+        // Anamnez kontrolü
+        if (empty($patient->anamnesis) || trim($patient->anamnesis) === '') {
+            $badges[] = [
+                'type' => 'anamnesis',
+                'label' => 'Anamnez',
+                'icon' => 'fas fa-clipboard-list',
+                'color' => 'bg-red-100 text-red-800 border-red-200',
+                'tooltip' => 'Anamnez bilgisi eksik'
+            ];
+        }
+        
+        // Fiziki muayene kontrolü
+        if (empty($patient->physical_examination) || trim($patient->physical_examination) === '') {
+            $badges[] = [
+                'type' => 'physical_examination',
+                'label' => 'Fiziki Muayene',
+                'icon' => 'fas fa-stethoscope',
+                'color' => 'bg-orange-100 text-orange-800 border-orange-200',
+                'tooltip' => 'Fiziki muayene bilgisi eksik'
+            ];
+        }
+        
+        // Karar verilen operasyon kontrolü
+        if (empty($patient->planned_operation) || trim($patient->planned_operation) === '') {
+            $badges[] = [
+                'type' => 'planned_operation',
+                'label' => 'Operasyon',
+                'icon' => 'fas fa-procedures',
+                'color' => 'bg-blue-100 text-blue-800 border-blue-200',
+                'tooltip' => 'Karar verilen operasyon bilgisi eksik'
+            ];
+        }
+        
+        return $badges;
+    }
+    
+    /**
+     * Hastanın tamamlanma yüzdesini hesaplar
+     */
+    public function getPatientCompletionPercentage($patient)
+    {
+        $totalFields = 3; // anamnesis, physical_examination, planned_operation
+        $completedFields = 0;
+        
+        if (!empty($patient->anamnesis) && trim($patient->anamnesis) !== '') {
+            $completedFields++;
+        }
+        
+        if (!empty($patient->physical_examination) && trim($patient->physical_examination) !== '') {
+            $completedFields++;
+        }
+        
+        if (!empty($patient->planned_operation) && trim($patient->planned_operation) !== '') {
+            $completedFields++;
+        }
+        
+        return round(($completedFields / $totalFields) * 100);
+    }
+    
+    /**
+     * Hastanın bilgi durumunu döndürür
+     */
+    public function getPatientInfoStatus($patient)
+    {
+        $percentage = $this->getPatientCompletionPercentage($patient);
+        
+        if ($percentage === 100) {
+            return [
+                'status' => 'complete',
+                'color' => 'text-green-600',
+                'icon' => 'fas fa-check-circle',
+                'label' => 'Tamamlandı'
+            ];
+        } elseif ($percentage >= 66) {
+            return [
+                'status' => 'partial',
+                'color' => 'text-yellow-600',
+                'icon' => 'fas fa-exclamation-circle',
+                'label' => 'Kısmen Tamamlandı'
+            ];
+        } else {
+            return [
+                'status' => 'incomplete',
+                'color' => 'text-red-600',
+                'icon' => 'fas fa-times-circle',
+                'label' => 'Eksik Bilgiler'
+            ];
+        }
     }
 }

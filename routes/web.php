@@ -39,6 +39,10 @@ Route::get('/clinic', function () {
     return view('clinic');
 })->middleware('auth')->name('clinic');
 
+Route::get('/payment-reports', function () {
+    return view('payment-reports');
+})->middleware('auth')->name('payment-reports');
+
 // API Routes
 // API endpoint for patient statistics
 Route::get('/api/patient-stats', function () {
@@ -282,6 +286,268 @@ Route::get('/api/operation-stats', function () {
             'data' => array_column($monthlyTrend, 'count')
         ]
     ]);
+})->middleware('auth');
+
+// API endpoint for process type statistics
+Route::get('/api/process-type-stats', function () {
+    $user = auth()->user();
+    $period = request('period', 'monthly');
+    
+    // Base query with doctor_id filtering based on user role
+    $query = \App\Models\Operation::with('operationType');
+    
+    if ($user->role === 'doctor') {
+        $query->where('doctor_id', $user->id);
+    } elseif (in_array($user->role, ['secretary', 'nurse'])) {
+        // Secretary ve nurse tüm verileri görebilir
+    }
+    
+    // Period filtering
+    if ($period === 'monthly') {
+        $query->whereMonth('created_at', now()->month)
+              ->whereYear('created_at', now()->year);
+    } elseif ($period === 'yearly') {
+        $query->whereYear('created_at', now()->year);
+    }
+    // 'all' için filtreleme yok
+    
+    $operations = $query->get();
+    
+    // Process type istatistikleri
+    $processTypeCounts = [];
+    $totalProcessTypes = 0;
+    
+    foreach ($operations as $operation) {
+        $processTypeName = $operation->operationType ? $operation->operationType->name : 'Belirtilmemiş';
+        $processTypeCounts[$processTypeName] = ($processTypeCounts[$processTypeName] ?? 0) + 1;
+        $totalProcessTypes++;
+    }
+    
+    // En çok yapılan process type
+    $mostProcessType = null;
+    $mostProcessTypeCount = 0;
+    
+    if (!empty($processTypeCounts)) {
+        arsort($processTypeCounts);
+        $mostProcessType = array_key_first($processTypeCounts);
+        $mostProcessTypeCount = $processTypeCounts[$mostProcessType];
+    }
+    
+    return response()->json([
+        'most_process_type' => $mostProcessType ?: 'Veri yok',
+        'most_process_type_count' => $mostProcessTypeCount,
+        'total_process_types' => count($processTypeCounts),
+        'process_types' => [
+            'labels' => array_keys($processTypeCounts),
+            'data' => array_values($processTypeCounts)
+        ]
+    ]);
+})->middleware('auth');
+
+// API endpoint for operations detail table
+Route::get('/api/operations-detail', function () {
+    $user = auth()->user();
+    $period = request('period', 'monthly');
+    $page = request('page', 1);
+    $perPage = request('per_page', 10);
+    
+    // Base query with doctor_id filtering based on user role
+    $query = \App\Models\Operation::with('operationType');
+    
+    if ($user->role === 'doctor') {
+        $query->where('doctor_id', $user->id);
+    } elseif (in_array($user->role, ['secretary', 'nurse'])) {
+        // Secretary ve nurse tüm verileri görebilir
+    }
+    
+    // Period filtering for current data
+    $currentQuery = clone $query;
+    $previousQuery = clone $query;
+    
+    if ($period === 'monthly') {
+        $currentQuery->whereMonth('created_at', now()->month)
+                     ->whereYear('created_at', now()->year);
+        $previousQuery->whereMonth('created_at', now()->subMonth()->month)
+                      ->whereYear('created_at', now()->subMonth()->year);
+    } elseif ($period === 'yearly') {
+        $currentQuery->whereYear('created_at', now()->year);
+        $previousQuery->whereYear('created_at', now()->subYear()->year);
+    }
+    
+    // Operasyon türlerine göre grupla
+    $currentOperations = $currentQuery->get()->groupBy(function($operation) {
+        return $operation->process . '|' . ($operation->operationType ? $operation->operationType->name : 'Belirtilmemiş');
+    });
+    
+    $previousOperations = $previousQuery->get()->groupBy(function($operation) {
+        return $operation->process . '|' . ($operation->operationType ? $operation->operationType->name : 'Belirtilmemiş');
+    });
+    
+    $operationsData = [];
+    
+    foreach ($currentOperations as $key => $operations) {
+        [$process, $processType] = explode('|', $key);
+        $currentCount = $operations->count();
+        $previousCount = $previousOperations->get($key, collect())->count();
+        
+        // Değişim yüzdesi hesapla
+        $change = 0;
+        if ($previousCount > 0) {
+            $change = round((($currentCount - $previousCount) / $previousCount) * 100, 1);
+        } elseif ($currentCount > 0) {
+            $change = 100;
+        }
+        
+        // Process türü çevirisi
+        $processTranslations = [
+            'surgery' => 'Ameliyat',
+            'mesotherapy' => 'Mezoterapi',
+            'botox' => 'Botoks',
+            'filler' => 'Dolgu'
+        ];
+        
+        $operationsData[] = [
+            'operation_name' => $processTranslations[$process] ?? ucfirst($process),
+            'process_type' => $processType,
+            'total_count' => $currentCount + $previousCount,
+            'current_month' => $currentCount,
+            'previous_month' => $previousCount,
+            'change' => $change
+        ];
+    }
+    
+    // Toplam sayıya göre sırala
+    usort($operationsData, function($a, $b) {
+        return $b['total_count'] - $a['total_count'];
+    });
+    
+    // Sayfalama
+    $total = count($operationsData);
+    $offset = ($page - 1) * $perPage;
+    $paginatedData = array_slice($operationsData, $offset, $perPage);
+    
+    return response()->json([
+        'operations' => $paginatedData,
+        'pagination' => [
+            'current_page' => (int)$page,
+            'last_page' => ceil($total / $perPage),
+            'per_page' => (int)$perPage,
+            'total' => $total,
+            'from' => $offset + 1,
+            'to' => min($offset + $perPage, $total)
+        ]
+    ]);
+})->middleware('auth');
+
+// API endpoint for exporting operations detail
+Route::get('/api/operations-detail/export', function () {
+    $user = auth()->user();
+    $period = request('period', 'monthly');
+    
+    // Base query with doctor_id filtering based on user role
+    $query = \App\Models\Operation::with('operationType');
+    
+    if ($user->role === 'doctor') {
+        $query->where('doctor_id', $user->id);
+    } elseif (in_array($user->role, ['secretary', 'nurse'])) {
+        // Secretary ve nurse tüm verileri görebilir
+    }
+    
+    // Period filtering
+    if ($period === 'monthly') {
+        $query->whereMonth('created_at', now()->month)
+              ->whereYear('created_at', now()->year);
+    } elseif ($period === 'yearly') {
+        $query->whereYear('created_at', now()->year);
+    }
+    
+    $operations = $query->get();
+    
+    // CSV başlıkları
+    $headers = [
+        'Content-Type' => 'text/csv',
+        'Content-Disposition' => 'attachment; filename="islem-detaylari-' . date('Y-m-d') . '.csv"',
+    ];
+    
+    $callback = function() use ($operations) {
+        $file = fopen('php://output', 'w');
+        
+        // UTF-8 BOM ekle (Excel için)
+        fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        // Başlıkları yaz
+        fputcsv($file, ['İşlem Adı', 'İşlem Türü', 'Tarih', 'Hasta', 'Doktor'], ';');
+        
+        // Process türü çevirisi
+        $processTranslations = [
+            'surgery' => 'Ameliyat',
+            'mesotherapy' => 'Mezoterapi',
+            'botox' => 'Botoks',
+            'filler' => 'Dolgu'
+        ];
+        
+        foreach ($operations as $operation) {
+            fputcsv($file, [
+                $processTranslations[$operation->process] ?? ucfirst($operation->process),
+                $operation->operationType ? $operation->operationType->name : 'Belirtilmemiş',
+                $operation->created_at->format('d.m.Y H:i'),
+                $operation->patient ? $operation->patient->name : 'Bilinmiyor',
+                $operation->doctor ? $operation->doctor->name : 'Bilinmiyor'
+            ], ';');
+        }
+        
+        fclose($file);
+    };
+    
+    return response()->stream($callback, 200, $headers);
+})->middleware('auth');
+
+// PDF Export endpoint for operations detail
+Route::get('/api/operations-detail/pdf', function () {
+    $user = auth()->user();
+    $period = request('period', 'monthly');
+    
+    // Base query with relationships
+    $query = \App\Models\Operation::with(['operationType', 'patient', 'doctor']);
+    
+    // Role-based filtering
+    if ($user->role === 'doctor') {
+        $query->where('doctor_id', $user->id);
+    } elseif (in_array($user->role, ['secretary', 'nurse'])) {
+        // Secretary ve nurse tüm verileri görebilir
+    }
+    
+    // Period filtering
+    if ($period === 'monthly') {
+        $query->whereMonth('created_at', now()->month)
+              ->whereYear('created_at', now()->year);
+    } elseif ($period === 'yearly') {
+        $query->whereYear('created_at', now()->year);
+    }
+    // 'all' için filtreleme yok
+    
+    $operations = $query->orderBy('created_at', 'desc')->get();
+    
+    // PDF oluştur
+    $pdf = app('dompdf.wrapper');
+    $pdf->loadView('pdf.operations-report', [
+        'operations' => $operations,
+        'period' => $period,
+        'clinic_name' => config('app.name', 'Klinik Yönetim Sistemi')
+    ]);
+    
+    // PDF ayarları
+    $pdf->setPaper('A4', 'portrait');
+    $pdf->setOptions([
+        'isHtml5ParserEnabled' => true,
+        'isRemoteEnabled' => true,
+        'defaultFont' => 'DejaVu Sans'
+    ]);
+    
+    // Dosya adı oluştur
+    $filename = 'islem-detay-raporu-' . now()->format('Y-m-d-H-i') . '.pdf';
+    
+    return $pdf->download($filename);
 })->middleware('auth');
 
 Route::middleware(['auth'])->group(function () {

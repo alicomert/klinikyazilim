@@ -6,6 +6,8 @@ use App\Models\Operation;
 use App\Models\OperationNote;
 use App\Models\Patient;
 use App\Models\Activity;
+use App\Models\OperationType;
+use App\Models\OperationDetail;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -14,6 +16,9 @@ use Illuminate\Support\Facades\Auth;
 class OperationList extends Component
 {
     use WithPagination;
+
+    // Event listeners
+    protected $listeners = ['operation-type-added' => 'refreshOperationTypes'];
 
     // Public properties
     public $operations = [];
@@ -42,10 +47,41 @@ class OperationList extends Component
     // Yeni istatistik sistemi için
     public $statsPeriod = 'monthly'; // monthly, yearly, this_year, all
 
+    // Dinamik dropdown için yeni property'ler
+    public $operationTypes = [];
+    public $operationDetails = [];
+    public $selectedOperationType = null;
+    public $operationTypeSearch = '';
+    public $operationDetailSearch = '';
+    public $showOperationTypeDropdown = false;
+    public $showOperationDetailDropdown = false;
+    public $showAddOperationTypeModal = false;
+    public $showAddOperationDetailModal = false;
+    public $editingOperationDetail = null;
+    public $editingOperationType = null;
+    
+    // Yeni İşlem Tipi Ekle sistemi için ayrı property'ler
+    public $operationTypeForm = ['name' => '', 'value' => ''];
+    
+    public $newOperationDetail = ['name' => '', 'description' => ''];
+    
+    // Process dropdown için property'ler
+    public $processOptions = [
+        'surgery' => 'Ameliyat',
+        'mesotherapy' => 'Mezoterapi',
+        'botox' => 'Botoks',
+        'filler' => 'Dolgu'
+    ];
+    public $processSearch = '';
+    public $showProcessDropdown = false;
+    public $showAddProcessModal = false;
+    public $newProcess = ['name' => '', 'value' => '', 'description' => ''];
+
     // Validation rules
     protected $rules = [
         'newOperation.patient_id' => 'required|exists:patients,id',
-        'newOperation.process' => 'required|in:surgery,mesotherapy,botox,filler',
+        'newOperation.process' => 'required|string',
+        'selectedOperationType' => 'required|exists:operation_types,id',
         'newOperation.process_detail' => 'nullable|string',
         'newOperation.registration_period' => 'required|string'
     ];
@@ -53,23 +89,13 @@ class OperationList extends Component
     protected $messages = [
         'newOperation.patient_id.required' => 'Hasta seçimi zorunludur.',
         'newOperation.patient_id.exists' => 'Seçilen hasta bulunamadı.',
-        'newOperation.process.required' => 'İşlem türü seçimi zorunludur.',
-        'newOperation.process.in' => 'Geçersiz işlem türü.',
-
+        'newOperation.process.required' => 'İşlem süreci seçimi zorunludur.',
+        'selectedOperationType.required' => 'İşlem tipi seçimi zorunludur.',
+        'selectedOperationType.exists' => 'Seçilen işlem tipi bulunamadı.',
         'newOperation.registration_period.required' => 'Kayıt dönemi zorunludur.'
     ];
 
-    public function mount()
-    {
-        $this->loadOperations();
-        $this->loadPatients();
-        $this->resetForm();
-        $this->currentRegistrationPeriod = $this->getCurrentRegistrationPeriod();
-        $this->filteredPatients = []; // Başlangıçta boş liste
-        
-        // LocalStorage'dan istatistik dönemini al
-        $this->statsPeriod = session('operation_stats_period', 'monthly');
-    }
+    // Mount methodu dinamik dropdown için güncellendi
 
     // Month input için YYYY-MM formatı
     private function getCurrentRegistrationPeriod()
@@ -169,6 +195,12 @@ class OperationList extends Component
     {
         $this->selectedPatient = null;
         $this->showPatientDetails = false;
+    }
+
+    // Process alanı real-time validation
+    public function updatedNewOperationProcess()
+    {
+        $this->validateOnly('newOperation.process');
     }
 
     // Hasta seç ve modalı kapat
@@ -329,7 +361,7 @@ class OperationList extends Component
     {
         $user = auth()->user();
         
-        $query = Operation::with(['patient', 'creator', 'doctor'])
+        $query = Operation::with(['patient', 'creator', 'doctor', 'operationType'])
             ->when($this->searchTerm, function($q) {
                 $q->whereHas('patient', function($patientQuery) {
                     $patientQuery->where('first_name', 'like', '%' . $this->searchTerm . '%')
@@ -361,15 +393,15 @@ class OperationList extends Component
         // Doktor bazlı erişim kontrolü
         if ($user->role === 'doctor') {
             // Doktor sadece kendi operasyonlarını görebilir
-            $query->where('doctor_id', $user->id);
-        } elseif ($user->role === 'secretary') {
-            // Sekreter sadece bağlı olduğu doktorun operasyonlarını görebilir
-            $query->where('doctor_id', $user->doctor_id);
+            $query->byDoctor($user->id);
+        } elseif (in_array($user->role, ['nurse', 'secretary'])) {
+            // Hemşire ve sekreter sadece bağlı olduğu doktorun operasyonlarını görebilir
+            $query->byDoctor($user->doctor_id);
         }
         // Admin tüm operasyonları görebilir (ek filtre yok)
 
-        $this->operations = $query->orderBy('process_date', 'desc')
-                                 ->orderBy('created_at', 'desc')
+        $this->operations = $query->orderBy('created_at', 'desc')
+                                 ->orderBy('process_date', 'desc')
                                  ->get();
     }
 
@@ -383,8 +415,8 @@ class OperationList extends Component
         if ($user->role === 'doctor') {
             // Doktor sadece kendi hastalarını görebilir
             $query->where('doctor_id', $user->id);
-        } elseif ($user->role === 'secretary') {
-            // Sekreter sadece bağlı olduğu doktorun hastalarını görebilir
+        } elseif (in_array($user->role, ['nurse', 'secretary'])) {
+            // Hemşire ve sekreter sadece bağlı olduğu doktorun hastalarını görebilir
             $query->where('doctor_id', $user->doctor_id);
         }
         // Admin tüm hastaları görebilir (ek filtre yok)
@@ -394,41 +426,77 @@ class OperationList extends Component
 
     public function create()
     {
-        $this->validate();
-        
-        $user = auth()->user();
-        
-        // Doktor ID'sini belirle
-        $doctorId = null;
-        if ($user->role === 'doctor') {
-            $doctorId = $user->id;
-        } elseif ($user->role === 'secretary') {
-            $doctorId = $user->doctor_id;
+        try {
+            $this->validate();
+            
+            $user = auth()->user();
+            
+            // Hasta yetki kontrolü
+            $patient = Patient::find($this->newOperation['patient_id']);
+            if (!$patient) {
+                session()->flash('error', 'Seçilen hasta bulunamadı.');
+                return;
+            }
+            
+            // Kullanıcının bu hastaya erişim yetkisi var mı kontrol et
+            if ($user->role === 'doctor' && $patient->doctor_id !== $user->id) {
+                session()->flash('error', 'Bu hastaya operasyon ekleme yetkiniz yok.');
+                return;
+            } elseif (in_array($user->role, ['nurse', 'secretary']) && $patient->doctor_id !== $user->doctor_id) {
+                session()->flash('error', 'Bu hastaya operasyon ekleme yetkiniz yok.');
+                return;
+            }
+            
+            // Doktor ID'sini belirle
+            $doctorId = null;
+            if ($user->role === 'doctor') {
+                $doctorId = $user->id;
+            } elseif (in_array($user->role, ['nurse', 'secretary'])) {
+                $doctorId = $user->doctor_id;
+            } elseif ($user->role === 'admin') {
+                // Admin için hasta doktorunu kullan
+                $doctorId = $patient->doctor_id;
+            }
+
+            // created_by logic: doctor ise kendi id'si, nurse/secretary ise doctor_id'si
+            $createdBy = $user->role === 'doctor' ? $user->id : $user->doctor_id;
+
+            $operation = Operation::create([
+                'patient_id' => $this->newOperation['patient_id'],
+                'process' => $this->newOperation['process'],
+                'process_type' => $this->selectedOperationType,
+                'process_detail' => $this->newOperation['process_detail'],
+                'process_date' => Carbon::today(),
+                'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period']),
+                'created_by' => $createdBy,
+                'doctor_id' => $doctorId
+            ]);
+
+            // Activities tablosuna kayıt ekle
+            Activity::create([
+                'type' => 'operation_added',
+                'description' => 'Yeni operasyon eklendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
+                'patient_id' => $this->newOperation['patient_id'],
+                'doctor_id' => $doctorId
+            ]);
+
+            $this->closeModal();
+            $this->loadOperations();
+
+            session()->flash('message', 'Operasyon başarıyla eklendi.');
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation hataları otomatik olarak gösterilir
+            throw $e;
+        } catch (\Exception $e) {
+            // Database veya diğer hatalar
+            session()->flash('error', 'Operasyon kaydedilirken bir hata oluştu: ' . $e->getMessage());
+            \Log::error('Operation creation error: ' . $e->getMessage(), [
+                'user_id' => auth()->id(),
+                'operation_data' => $this->newOperation,
+                'stack_trace' => $e->getTraceAsString()
+            ]);
         }
-        // Admin için doctor_id null kalabilir veya seçilebilir
-
-        $operation = Operation::create([
-            'patient_id' => $this->newOperation['patient_id'],
-            'process' => $this->newOperation['process'],
-            'process_detail' => $this->newOperation['process_detail'],
-            'process_date' => Carbon::today(),
-            'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period']),
-            'created_by' => auth()->id(),
-            'doctor_id' => $doctorId
-        ]);
-
-        // Activities tablosuna kayıt ekle
-        Activity::create([
-            'type' => 'operation_added',
-            'description' => 'Yeni operasyon eklendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
-            'patient_id' => $this->newOperation['patient_id'],
-            'doctor_id' => $doctorId
-        ]);
-
-        $this->closeModal();
-        $this->loadOperations();
-
-        session()->flash('message', 'Operasyon başarıyla eklendi.');
     }
 
     public function edit($operationId)
@@ -441,48 +509,71 @@ class OperationList extends Component
         }
 
         $this->editingOperation = $operation->id;
+        $this->selectedOperationType = $operation->process_type;
+        
+        // Eğer process_type varsa, operation type search'ü set et
+        if ($operation->process_type) {
+            $operationType = OperationType::find($operation->process_type);
+            if ($operationType) {
+                $this->operationTypeSearch = $operationType->name;
+                $this->loadOperationDetails($operation->process_type);
+            }
+        }
+        
         $this->newOperation = [
             'patient_id' => $operation->patient_id,
             'process' => $operation->process,
             'process_detail' => $operation->process_detail,
             'registration_period' => $this->convertFromTurkishMonth($operation->registration_period)
         ];
+        
         $this->showModal = true;
     }
 
     public function update()
     {
-        $this->validate();
+        try {
+            $this->validate();
 
-        $operation = Operation::findOrFail($this->editingOperation);
+            $operation = Operation::findOrFail($this->editingOperation);
 
-        if (!$this->canEdit($operation)) {
-            session()->flash('error', 'Bu operasyonu düzenleme yetkiniz yok.');
-            return;
+            if (!$this->canEdit($operation)) {
+                session()->flash('error', 'Bu operasyonu düzenleme yetkiniz yok.');
+                return;
+            }
+
+            $operation->update([
+                'patient_id' => $this->newOperation['patient_id'],
+                'process' => $this->newOperation['process'],
+                'process_type' => $this->selectedOperationType,
+                'process_detail' => $this->newOperation['process_detail'],
+                'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period'])
+            ]);
+
+            // Activities tablosuna kayıt ekle
+            $user = auth()->user();
+            $doctorId = $user->role === 'doctor' ? $user->id : (in_array($user->role, ['nurse', 'secretary']) ? $user->doctor_id : null);
+            
+            Activity::create([
+                'type' => 'operation_updated',
+                'description' => 'Operasyon güncellendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
+                'patient_id' => $this->newOperation['patient_id'],
+                'doctor_id' => $doctorId
+            ]);
+
+            $this->closeModal();
+            $this->loadOperations();
+
+            session()->flash('message', 'Operasyon başarıyla güncellendi.');
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Validation hataları otomatik olarak gösterilir
+            throw $e;
+        } catch (\Exception $e) {
+            // Database veya diğer hatalar
+            session()->flash('error', 'Operasyon güncellenirken bir hata oluştu. Lütfen tüm alanları doğru şekilde doldurun.');
+            \Log::error('Operation update error: ' . $e->getMessage());
         }
-
-        $operation->update([
-            'patient_id' => $this->newOperation['patient_id'],
-            'process' => $this->newOperation['process'],
-            'process_detail' => $this->newOperation['process_detail'],
-            'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period'])
-        ]);
-
-        // Activities tablosuna kayıt ekle
-        $user = auth()->user();
-        $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
-        
-        Activity::create([
-            'type' => 'operation_updated',
-            'description' => 'Operasyon güncellendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
-            'patient_id' => $this->newOperation['patient_id'],
-            'doctor_id' => $doctorId
-        ]);
-
-        $this->closeModal();
-        $this->loadOperations();
-
-        session()->flash('message', 'Operasyon başarıyla güncellendi.');
     }
 
     public function delete($operationId)
@@ -518,6 +609,7 @@ class OperationList extends Component
         $this->newOperation = [
             'patient_id' => '',
             'process' => '',
+            'operation_detail_id' => null,
             'process_detail' => '',
             'registration_period' => $this->getCurrentRegistrationPeriod()
         ];
@@ -562,11 +654,25 @@ class OperationList extends Component
     {
         $user = auth()->user();
 
+        // Admin her şeyi düzenleyebilir
         if ($user->role === 'admin') {
             return true;
         }
 
-        return $operation->created_by === $user->id;
+        // Doktor sadece kendi işlemlerini düzenleyebilir
+        if ($user->role === 'doctor') {
+            return $operation->doctor_id === $user->id;
+        }
+
+        // Hemşire ve sekreter aynı doktora bağlı işlemleri düzenleyebilir
+        if (in_array($user->role, ['nurse', 'secretary'])) {
+            return $operation->doctor_id === $user->doctor_id;
+        }
+
+        // Diğer durumlar için sadece kendi oluşturduğu kayıtları düzenleyebilir
+        // created_by kontrolü: doctor ise kendi id'si, nurse/secretary ise doctor_id'si ile karşılaştır
+        $expectedCreatedBy = $user->role === 'doctor' ? $user->id : $user->doctor_id;
+        return $operation->created_by === $expectedCreatedBy;
     }
 
     public function canDelete($operation)
@@ -946,5 +1052,460 @@ class OperationList extends Component
             'all' => 'Tümü',
             default => 'Aylık'
         };
+    }
+
+    // Dinamik dropdown methodları
+    public function mount()
+    {
+        $this->loadOperations();
+        $this->loadPatients();
+        $this->loadOperationTypes();
+        $this->resetForm();
+        $this->currentRegistrationPeriod = $this->getCurrentRegistrationPeriod();
+        $this->filteredPatients = [];
+        
+        $this->statsPeriod = session('operation_stats_period', 'monthly');
+    }
+
+    public function loadOperationTypes()
+    {
+        $user = auth()->user();
+        
+        // Doktor ID'sini belirle
+        $doctorId = $user->role === 'doctor' ? $user->id : $user->doctor_id;
+        
+        $this->operationTypes = OperationType::active()
+            ->forDoctor($doctorId)
+            ->ordered()
+            ->get();
+    }
+
+    public function loadOperationDetails($operationTypeId = null)
+    {
+        if ($operationTypeId) {
+            $query = OperationDetail::active()
+                ->byType($operationTypeId)
+                ->ordered();
+            
+            // Arama filtresi
+            if (!empty($this->operationDetailSearch)) {
+                $query->where(function($q) {
+                    $q->where('name', 'like', '%' . $this->operationDetailSearch . '%')
+                      ->orWhere('description', 'like', '%' . $this->operationDetailSearch . '%');
+                });
+            }
+            
+            $this->operationDetails = $query->get();
+        } else {
+            $this->operationDetails = [];
+        }
+    }
+
+    public function updatedSelectedOperationType()
+    {
+        $this->loadOperationDetails($this->selectedOperationType);
+        
+        // Sadece yeni kayıt ekleme modunda process_detail'ı temizle
+        // Güncelleme modunda mevcut detayı koru
+        if (!$this->editingOperation) {
+            $this->newOperation['process_detail'] = '';
+        }
+    }
+
+    public function updatedOperationTypeSearch()
+    {
+        if (empty($this->operationTypeSearch)) {
+            $this->loadOperationTypes();
+        } else {
+            $user = auth()->user();
+            
+            // Doktor ID'sini belirle
+            $doctorId = $user->role === 'doctor' ? $user->id : $user->doctor_id;
+            
+            $this->operationTypes = OperationType::active()
+                ->forDoctor($doctorId)
+                ->where('name', 'like', '%' . $this->operationTypeSearch . '%')
+                ->ordered()
+                ->get();
+        }
+    }
+
+    public function updatedOperationDetailSearch()
+    {
+        if (empty($this->operationDetailSearch)) {
+            $this->loadOperationDetails($this->selectedOperationType);
+        } else {
+            $this->operationDetails = OperationDetail::active()
+                ->when($this->selectedOperationType, function($query) {
+                    $query->byType($this->selectedOperationType);
+                })
+                ->where('name', 'like', '%' . $this->operationDetailSearch . '%')
+                ->ordered()
+                ->get();
+        }
+        $this->showOperationDetailDropdown = true;
+    }
+
+    public function openAddOperationTypeModal()
+    {
+        $this->showAddOperationTypeModal = true;
+        $this->operationTypeForm = [
+            'name' => '',
+            'value' => ''
+        ];
+    }
+
+    public function closeAddOperationTypeModal()
+    {
+        $this->showAddOperationTypeModal = false;
+        $this->resetOperationTypeForm();
+    }
+
+    public function addOperationType()
+    {
+        $this->validate([
+            'operationTypeForm.name' => 'required|string|max:255'
+        ]);
+
+        $user = auth()->user();
+        
+        // created_by logic: doctor ise kendi id'si, nurse/secretary ise doctor_id'si
+        $createdBy = $user->role === 'doctor' ? $user->id : $user->doctor_id;
+
+        $operationType = OperationType::create([
+            'name' => $this->operationTypeForm['name'],
+            'value' => strtolower(str_replace(' ', '_', $this->operationTypeForm['name'])),
+            'is_active' => true,
+            'sort_order' => (OperationType::max('sort_order') ?? 0) + rand(1, 100),
+            'created_by' => $createdBy
+        ]);
+
+        $this->loadOperationTypes();
+        $this->selectedOperationType = $operationType->id;
+        $this->operationTypeSearch = $operationType->name;
+        $this->newOperation['process'] = $operationType->value;
+        $this->loadOperationDetails($operationType->id);
+        $this->closeAddOperationTypeModal();
+
+        // Event dispatch ederek diğer component'lerin güncellenmesini sağla
+        $this->dispatch('operation-type-added', operationTypeId: $operationType->id);
+
+        session()->flash('message', 'Yeni işlem türü başarıyla eklendi.');
+    }
+
+    public function createOperationType()
+    {
+        $this->validate([
+            'operationTypeForm.name' => 'required|string|max:255'
+        ]);
+
+        // Name'den otomatik benzersiz value oluştur
+        $baseValue = \Str::slug($this->operationTypeForm['name'], '_');
+        $value = $baseValue;
+        $counter = 1;
+        
+        // Benzersiz value bulana kadar dene
+        while (OperationType::where('value', $value)->exists()) {
+            $value = $baseValue . '_' . $counter;
+            $counter++;
+        }
+
+        // created_by logic: doctor ise kendi id'si, nurse/secretary ise doctor_id'si
+        $user = auth()->user();
+        $createdBy = $user->role === 'doctor' ? $user->id : $user->doctor_id;
+
+        $operationType = OperationType::create([
+            'name' => $this->operationTypeForm['name'],
+            'value' => $value,
+            'is_active' => true,
+            'sort_order' => (OperationType::max('sort_order') ?? 0) + rand(1, 100),
+            'created_by' => $createdBy
+        ]);
+
+        $this->loadOperationTypes();
+        $this->selectedOperationType = $operationType->id;
+        $this->newOperation['process'] = $operationType->value;
+        $this->closeAddOperationTypeModal();
+
+        // Event dispatch ederek diğer component'lerin güncellenmesini sağla
+        $this->dispatch('operation-type-added', operationTypeId: $operationType->id);
+
+        session()->flash('message', 'Yeni işlem türü başarıyla eklendi.');
+    }
+
+    public function editOperationType($operationTypeValue)
+    {
+        $operationType = OperationType::where('value', $operationTypeValue)->firstOrFail();
+        
+        $this->editingOperationType = $operationType->id;
+        $this->operationTypeForm = [
+            'name' => $operationType->name,
+            'value' => $operationType->value
+        ];
+    }
+
+    public function updateOperationType()
+    {
+        $this->validate([
+            'operationTypeForm.name' => 'required|string|max:255',
+            'operationTypeForm.value' => 'required|string|max:255|unique:operation_types,value,' . $this->editingOperationType
+        ]);
+
+        $operationType = OperationType::findOrFail($this->editingOperationType);
+        
+        $operationType->update([
+            'name' => $this->operationTypeForm['name'],
+            'value' => $this->operationTypeForm['value']
+        ]);
+
+        $this->loadOperationTypes();
+        $this->resetOperationTypeForm();
+
+        session()->flash('message', 'İşlem türü başarıyla güncellendi.');
+    }
+
+    public function deleteOperationType($operationTypeValue)
+    {
+        $operationType = OperationType::where('value', $operationTypeValue)->firstOrFail();
+
+        $operationType->delete();
+        $this->loadOperationTypes();
+
+        session()->flash('message', 'İşlem türü başarıyla silindi.');
+    }
+
+    public function resetOperationTypeForm()
+    {
+        $this->editingOperationType = null;
+        $this->operationTypeForm = ['name' => '', 'value' => ''];
+    }
+
+    public function showAddOperationDetailModal()
+    {
+        if (!$this->selectedOperationType) {
+            session()->flash('error', 'Önce bir işlem türü seçmelisiniz.');
+            return;
+        }
+
+        $this->showAddOperationDetailModal = true;
+        $this->newOperationDetail = [
+            'name' => '',
+            'description' => ''
+        ];
+    }
+
+    public function closeAddOperationDetailModal()
+    {
+        $this->showAddOperationDetailModal = false;
+        $this->editingOperationDetail = null;
+        $this->newOperationDetail = [
+            'name' => '',
+            'description' => ''
+        ];
+    }
+
+    public function createOperationDetail()
+    {
+        // Eğer düzenleme modundaysak updateOperationDetail çağır
+        if ($this->editingOperationDetail) {
+            $this->updateOperationDetail();
+            return;
+        }
+
+        $this->validate([
+            'newOperationDetail.name' => 'required|string|max:255',
+            'newOperationDetail.description' => 'nullable|string'
+        ]);
+
+        if (!$this->selectedOperationType) {
+            session()->flash('error', 'Önce bir işlem türü seçmelisiniz.');
+            return;
+        }
+
+        // created_by logic: doctor ise kendi id'si, nurse/secretary ise doctor_id'si
+        $user = auth()->user();
+        $createdBy = $user->role === 'doctor' ? $user->id : $user->doctor_id;
+
+        $operationDetail = OperationDetail::create([
+            'name' => $this->newOperationDetail['name'],
+            'description' => $this->newOperationDetail['description'],
+            'is_active' => true,
+            'sort_order' => (OperationDetail::max('sort_order') ?? 0) + rand(1, 100),
+            'created_by' => $createdBy
+        ]);
+
+        $this->loadOperationDetails($this->selectedOperationType);
+        $this->newOperation['process_detail'] = $operationDetail->name;
+        $this->closeAddOperationDetailModal();
+
+        session()->flash('message', 'Yeni işlem detayı başarıyla eklendi.');
+    }
+
+    public function selectOperationType($operationTypeId)
+    {
+        $operationType = OperationType::find($operationTypeId);
+        if ($operationType) {
+            $this->selectedOperationType = $operationTypeId;
+
+            $this->operationTypeSearch = $operationType->name;
+            $this->loadOperationDetails($operationTypeId);
+            
+            // Sadece yeni kayıt ekleme modunda detayı temizle
+            // Güncelleme modunda mevcut detayı koru
+            if (!$this->editingOperation) {
+                $this->newOperation['process_detail'] = '';
+                $this->operationDetailSearch = '';
+            }
+            // Alpine.js ile dropdown otomatik kapanacak
+        }
+    }
+
+    public function selectOperationTypeWithDetail($operationTypeId, $operationDetailId)
+    {
+        // Önce operation type'ı seç
+        $this->selectOperationType($operationTypeId);
+        
+        // Sonra operation detail'ı seç
+        $operationDetail = OperationDetail::find($operationDetailId);
+        if ($operationDetail) {
+            $this->newOperation['operation_detail_id'] = $operationDetailId;
+            $this->newOperation['process_detail'] = $operationDetail->name;
+            $this->operationDetailSearch = $operationDetail->name;
+            $this->showOperationDetailDropdown = false;
+        }
+        
+        // Operation type dropdown'ını kapat
+        $this->showOperationTypeDropdown = false;
+    }
+
+    public function selectOperationDetail($operationDetailId)
+    {
+        $operationDetail = OperationDetail::find($operationDetailId);
+        if ($operationDetail) {
+            $this->newOperation['operation_detail_id'] = $operationDetailId;
+            $this->newOperation['process_detail'] = $operationDetail->name;
+            $this->operationDetailSearch = $operationDetail->name;
+            $this->showOperationDetailDropdown = false;
+        }
+    }
+
+    public function editOperationDetail($operationDetailId)
+    {
+        $operationDetail = OperationDetail::find($operationDetailId);
+        if ($operationDetail) {
+            $this->editingOperationDetail = $operationDetailId;
+            $this->newOperationDetail = [
+                'name' => $operationDetail->name,
+                'description' => $operationDetail->description
+            ];
+            $this->showAddOperationDetailModal = true;
+        }
+    }
+
+    public function updateOperationDetail()
+    {
+        $this->validate([
+            'newOperationDetail.name' => 'required|string|max:255',
+            'newOperationDetail.description' => 'nullable|string'
+        ]);
+
+        $operationDetail = OperationDetail::find($this->editingOperationDetail);
+        if ($operationDetail) {
+            $operationDetail->update([
+                'name' => $this->newOperationDetail['name'],
+                'description' => $this->newOperationDetail['description']
+            ]);
+
+            $this->loadOperationDetails($this->selectedOperationType);
+            $this->closeAddOperationDetailModal();
+
+            session()->flash('message', 'İşlem detayı başarıyla güncellendi.');
+        }
+    }
+
+    public function deleteOperationDetail($operationDetailId)
+    {
+        $operationDetail = OperationDetail::find($operationDetailId);
+        if ($operationDetail) {
+            $operationDetail->delete();
+            $this->loadOperationDetails($this->selectedOperationType);
+            session()->flash('message', 'İşlem detayı başarıyla silindi.');
+        }
+    }
+
+    public function resetDynamicDropdowns()
+    {
+        $this->selectedOperationType = null;
+        $this->operationDetails = [];
+        $this->operationTypeSearch = '';
+        $this->operationDetailSearch = '';
+
+        $this->newOperation['operation_detail_id'] = null;
+    }
+
+    // İşlem Süreci ile ilgili methodlar
+    public function selectProcess($processValue)
+    {
+        $this->newOperation['process'] = $processValue;
+        $this->processSearch = $this->processOptions[$processValue] ?? '';
+        // Alpine.js ile dropdown otomatik kapanacak
+    }
+
+    public function showAddProcessModal()
+    {
+        $this->showAddProcessModal = true;
+        $this->newProcess = [
+            'name' => '',
+            'value' => '',
+            'description' => ''
+        ];
+    }
+
+    public function closeAddProcessModal()
+    {
+        $this->showAddProcessModal = false;
+        $this->newProcess = [];
+    }
+
+    public function addProcess()
+    {
+        $this->validate([
+             'newProcess.name' => 'required|string|max:255',
+             'newProcess.value' => 'required|string|max:100',
+             'newProcess.description' => 'nullable|string'
+         ], [
+             'newProcess.name.required' => 'İşlem süreci adı zorunludur.',
+             'newProcess.value.required' => 'İşlem süreci değeri zorunludur.'
+         ]);
+
+        // Yeni işlem süreci ekle (şimdilik processOptions array'ine ekleyeceğiz)
+        // Gelecekte database tablosu oluşturulabilir
+        $this->processOptions[$this->newProcess['value']] = $this->newProcess['name'];
+        
+        // Form'u temizle ve modal'ı kapat
+        $this->closeAddProcessModal();
+        
+        // Yeni eklenen süreci seç
+        $this->selectProcess($this->newProcess['value']);
+        
+        session()->flash('message', 'Yeni işlem süreci başarıyla eklendi.');
+    }
+
+    // Event listener method - İşlem tipi eklendiğinde çalışır
+    public function refreshOperationTypes($operationTypeId = null)
+    {
+        // İşlem tipi listesini yenile
+        $this->loadOperationTypes();
+        
+        // Eğer yeni eklenen işlem tipi ID'si varsa, onu seç
+        if ($operationTypeId) {
+            $this->selectedOperationType = $operationTypeId;
+            $operationType = OperationType::find($operationTypeId);
+            if ($operationType) {
+                $this->operationTypeSearch = $operationType->name;
+                $this->newOperation['process'] = $operationType->value;
+                $this->loadOperationDetails($operationTypeId);
+            }
+        }
     }
 }

@@ -12,6 +12,7 @@ class Operation extends Model
         'patient_id',
         'doctor_id',
         'process',
+        'process_type',
         'process_detail',
         'process_date',
         'registration_period',
@@ -42,6 +43,13 @@ class Operation extends Model
     {
         return $this->hasMany(OperationNote::class);
     }
+
+    public function operationType(): BelongsTo
+    {
+        return $this->belongsTo(OperationType::class, 'process_type');
+    }
+
+
 
     // Scope'lar
     public function scopeByProcess($query, $process)

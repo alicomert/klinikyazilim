@@ -496,7 +496,7 @@
                                                             @endphp
                                                             {{ Str::limit($processLabel, 25) }}
                                                         </div>
-                                                        <div class="text-xs text-gray-400">{{ Str::limit($operation->process_detail ?? '', 30) }}</div>
+                                                        <div class="text-sm text-gray-800">{{ Str::limit($operation->process_detail ?? '', 30) }}</div>
                                                     </div>
                                                 </div>
                                             </td>

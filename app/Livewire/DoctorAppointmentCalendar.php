@@ -129,7 +129,7 @@ class DoctorAppointmentCalendar extends Component
     {
         $this->selectedPatient = \App\Models\Patient::find($patientId);
         $this->patientOperations = \App\Models\Operation::where('patient_id', $patientId)
-            ->with(['doctor', 'creator'])
+            ->with(['doctor', 'creator', 'operationType'])
             ->orderBy('process_date', 'desc')
             ->get();
         $this->showOperationsModal = true;

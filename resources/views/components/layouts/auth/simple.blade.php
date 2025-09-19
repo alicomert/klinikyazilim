@@ -3,7 +3,7 @@
     <head>
         @include('partials.head')
     </head>
-    <body class="min-h-screen bg-[#1e40af] dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 flex items-center justify-center p-4 relative overflow-hidden">
+    <body class="min-h-screen bg-[#1e40af] dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900 flex items-center justify-center p-4 relative">
         <!-- Animated background elements -->
         <div class="absolute inset-0 overflow-hidden pointer-events-none">
             <div class="absolute -top-40 -right-40 w-80 h-80 bg-white/20 rounded-full blur-3xl animate-pulse" style="animation-delay: 0s;"></div>

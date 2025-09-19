@@ -148,7 +148,7 @@
             </div>
 
             <!-- Operasyon Türü Dağılımı ve Aylık Trend -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                 <div>
                     <div class="flex justify-between items-center mb-4">
                         <h4 class="text-lg font-semibold text-gray-800">Operasyon Türü Dağılımı</h4>
@@ -167,6 +167,128 @@
                 <div>
                     <h4 class="text-lg font-semibold text-gray-800 mb-4">Aylık Operasyon Trendi</h4>
                     <canvas id="monthlyOperationChart" width="300" height="300"></canvas>
+                </div>
+            </div>
+
+            <!-- İşlem Türü (Process Type) Analizi -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div>
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800">İşlem Türü Dağılımı</h4>
+                        <select id="process-type-period-select" class="border rounded px-3 py-1 text-sm">
+                            <option value="monthly">Bu Ay</option>
+                            <option value="yearly">Bu Yıl</option>
+                            <option value="all">Tüm Zamanlar</option>
+                        </select>
+                    </div>
+                    <canvas id="processTypeChart" width="300" height="300"></canvas>
+                </div>
+                <div>
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">İşlem Türü İstatistikleri</h4>
+                    <div class="space-y-4">
+                        <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-4 rounded-lg text-white">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-blue-100 text-sm">En Çok Yapılan İşlem Türü</p>
+                                    <p id="most-process-type" class="text-xl font-bold">-</p>
+                                    <p id="most-process-type-count" class="text-sm text-blue-100">- işlem</p>
+                                </div>
+                                <i class="fas fa-star text-2xl text-blue-200"></i>
+                            </div>
+                        </div>
+                        <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-4 rounded-lg text-white">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-orange-100 text-sm">Toplam İşlem Türü</p>
+                                    <p id="total-process-types" class="text-xl font-bold">-</p>
+                                    <p class="text-sm text-orange-100">Farklı türde işlem</p>
+                                </div>
+                                <i class="fas fa-list text-2xl text-orange-200"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- İşlem Bazlı Detay Tablosu -->
+            <div class="bg-gray-50 rounded-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h4 class="text-lg font-semibold text-gray-800">İşlem Bazlı Detay Analizi</h4>
+                    <div class="flex space-x-2">
+                        <select id="table-period-select" class="border rounded px-3 py-1 text-sm">
+                            <option value="monthly">Bu Ay</option>
+                            <option value="yearly">Bu Yıl</option>
+                            <option value="all">Tüm Zamanlar</option>
+                        </select>
+                        <button onclick="exportTableData()" class="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700 mr-2">
+                            <i class="fas fa-download mr-1"></i>Excel'e Aktar
+                        </button>
+                        <button onclick="exportTableDataPDF()" class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700">
+                            <i class="fas fa-file-pdf mr-1"></i>PDF'e Aktar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200" id="operations-detail-table">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Operasyon Adı
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        İşlem Türü
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Toplam İşlem
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Bu Ay
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Geçen Ay
+                                    </th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                        Değişim
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="operations-table-body" class="bg-white divide-y divide-gray-200">
+                                <!-- Veriler JavaScript ile yüklenecek -->
+                                <tr>
+                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                        <i class="fas fa-spinner fa-spin mr-2"></i>Veriler yükleniyor...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <!-- Sayfalama -->
+                    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                        <div class="flex-1 flex justify-between sm:hidden">
+                            <button id="prev-page-mobile" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Önceki
+                            </button>
+                            <button id="next-page-mobile" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                                Sonraki
+                            </button>
+                        </div>
+                        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-gray-700">
+                                    Toplam <span id="total-records" class="font-medium">0</span> kayıttan 
+                                    <span id="showing-from" class="font-medium">0</span> - <span id="showing-to" class="font-medium">0</span> arası gösteriliyor
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" id="pagination-nav">
+                                    <!-- Sayfalama butonları JavaScript ile oluşturulacak -->
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -479,6 +601,7 @@ function updateMonthlyPatientChart(monthlyData) {
 // Operation report charts
 let operationTypeChart = null;
 let monthlyOperationChart = null;
+let processTypeChart = null;
 
 function initializeOperationCharts() {
     const operationTypeCtx = document.getElementById('operationTypeChart');
@@ -550,8 +673,56 @@ function initializeOperationCharts() {
         });
     }
     
+    // Process Type Chart
+    const processTypeCtx = document.getElementById('processTypeChart');
+    if (processTypeCtx) {
+        processTypeChart = new Chart(processTypeCtx, {
+            type: 'pie',
+            data: {
+                labels: [],
+                datasets: [{
+                    data: [],
+                    backgroundColor: [
+                        'rgb(59, 130, 246)',
+                        'rgb(16, 185, 129)',
+                        'rgb(245, 101, 101)',
+                        'rgb(251, 191, 36)',
+                        'rgb(139, 92, 246)',
+                        'rgb(236, 72, 153)'
+                    ]
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // Process Type Period Select Event Listener
+    const processTypePeriodSelect = document.getElementById('process-type-period-select');
+    if (processTypePeriodSelect) {
+        processTypePeriodSelect.addEventListener('change', function() {
+            loadProcessTypeData(this.value);
+        });
+    }
+
+    // Table Period Select Event Listener
+    const tablePeriodSelect = document.getElementById('table-period-select');
+    if (tablePeriodSelect) {
+        tablePeriodSelect.addEventListener('change', function() {
+            loadOperationsDetailTable(this.value);
+        });
+    }
+
     // İlk yükleme
     loadOperationData('monthly');
+    loadProcessTypeData('monthly');
+    loadOperationsDetailTable('monthly');
 }
 
 // Operasyon verilerini backend'den al
@@ -610,6 +781,214 @@ function updateOperationCharts(data) {
         monthlyOperationChart.data.datasets[0].data = data.monthly_trend.data;
         monthlyOperationChart.update();
     }
+}
+
+// Process Type verilerini backend'den al
+function loadProcessTypeData(period = 'monthly') {
+    const params = new URLSearchParams({
+        period: period
+    });
+    
+    fetch(`/api/process-type-stats?${params}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateProcessTypeStats(data);
+        updateProcessTypeChart(data);
+    })
+    .catch(error => {
+        console.error('Process type verileri yüklenirken hata:', error);
+        // Hata durumunda varsayılan değerler
+        document.getElementById('most-process-type').textContent = 'Veri yok';
+        document.getElementById('most-process-type-count').textContent = '0 işlem';
+        document.getElementById('total-process-types').textContent = '0';
+    });
+}
+
+// Process Type istatistiklerini güncelle
+function updateProcessTypeStats(data) {
+    document.getElementById('most-process-type').textContent = data.most_process_type || 'Veri yok';
+    document.getElementById('most-process-type-count').textContent = (data.most_process_type_count || 0) + ' işlem';
+    document.getElementById('total-process-types').textContent = data.total_process_types || 0;
+}
+
+// Process Type grafiğini güncelle
+function updateProcessTypeChart(data) {
+    if (processTypeChart && data.process_types) {
+        processTypeChart.data.labels = data.process_types.labels || [];
+        processTypeChart.data.datasets[0].data = data.process_types.data || [];
+        processTypeChart.update();
+    }
+}
+
+// İşlem Bazlı Detay Tablosu verilerini yükle
+let currentPage = 1;
+let totalPages = 1;
+const itemsPerPage = 10;
+
+function loadOperationsDetailTable(period = 'monthly', page = 1) {
+    const params = new URLSearchParams({
+        period: period,
+        page: page,
+        per_page: itemsPerPage
+    });
+    
+    // Loading state
+    const tableBody = document.getElementById('operations-table-body');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                <i class="fas fa-spinner fa-spin mr-2"></i>Veriler yükleniyor...
+            </td>
+        </tr>
+    `;
+    
+    fetch(`/api/operations-detail?${params}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        updateOperationsDetailTable(data);
+        updatePagination(data.pagination);
+    })
+    .catch(error => {
+        console.error('İşlem detay verileri yüklenirken hata:', error);
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-red-500">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>Veriler yüklenirken hata oluştu
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// İşlem Bazlı Detay Tablosunu güncelle
+function updateOperationsDetailTable(data) {
+    const tableBody = document.getElementById('operations-table-body');
+    
+    if (!data.operations || data.operations.length === 0) {
+        tableBody.innerHTML = `
+            <tr>
+                <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                    <i class="fas fa-info-circle mr-2"></i>Bu dönemde işlem bulunamadı
+                </td>
+            </tr>
+        `;
+        return;
+    }
+    
+    let tableHTML = '';
+    data.operations.forEach(operation => {
+        const changeClass = operation.change > 0 ? 'text-green-600' : operation.change < 0 ? 'text-red-600' : 'text-gray-600';
+        const changeIcon = operation.change > 0 ? 'fa-arrow-up' : operation.change < 0 ? 'fa-arrow-down' : 'fa-minus';
+        
+        tableHTML += `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">${operation.operation_name}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        ${operation.process_type}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${operation.total_count}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${operation.current_month}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${operation.previous_month}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm ${changeClass}">
+                    <i class="fas ${changeIcon} mr-1"></i>
+                    ${Math.abs(operation.change)}%
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableBody.innerHTML = tableHTML;
+}
+
+// Sayfalama güncelle
+function updatePagination(pagination) {
+    currentPage = pagination.current_page;
+    totalPages = pagination.last_page;
+    
+    // Sayfa bilgilerini güncelle
+    document.getElementById('total-records').textContent = pagination.total;
+    document.getElementById('showing-from').textContent = pagination.from || 0;
+    document.getElementById('showing-to').textContent = pagination.to || 0;
+    
+    // Sayfalama butonlarını oluştur
+    const paginationNav = document.getElementById('pagination-nav');
+    let paginationHTML = '';
+    
+    // Önceki sayfa butonu
+    if (currentPage > 1) {
+        paginationHTML += `
+            <button onclick="changePage(${currentPage - 1})" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        `;
+    }
+    
+    // Sayfa numaraları
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+        const isActive = i === currentPage;
+        paginationHTML += `
+            <button onclick="changePage(${i})" class="relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                isActive 
+                    ? 'z-10 bg-blue-50 border-blue-500 text-blue-600' 
+                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+            }">
+                ${i}
+            </button>
+        `;
+    }
+    
+    // Sonraki sayfa butonu
+    if (currentPage < totalPages) {
+        paginationHTML += `
+            <button onclick="changePage(${currentPage + 1})" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        `;
+    }
+    
+    paginationNav.innerHTML = paginationHTML;
+}
+
+// Sayfa değiştir
+function changePage(page) {
+    if (page >= 1 && page <= totalPages) {
+        const period = document.getElementById('table-period-select').value;
+        loadOperationsDetailTable(period, page);
+    }
+}
+
+// Excel'e aktar
+function exportTableData() {
+    const period = document.getElementById('table-period-select').value;
+    window.open(`/api/operations-detail/export?period=${period}`, '_blank');
+}
+
+// PDF'e aktar
+function exportTableDataPDF() {
+    const period = document.getElementById('table-period-select').value;
+    window.open(`/api/operations-detail/pdf?period=${period}`, '_blank');
 }
 
 // Performance report charts

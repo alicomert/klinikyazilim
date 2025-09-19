@@ -24,6 +24,16 @@ class AddPatientModal extends Component
     public $phone = '';
     public $birth_date = '';
     public $address = '';
+    public $registration_date = '';
+    public $needs_paid = '';
+    
+    // Ödeme Bilgileri
+    public $payments = [];
+    public $newPayment = [
+        'payment_method' => 'nakit',
+        'paid_amount' => '',
+        'notes' => ''
+    ];
 
     
     // Tıbbi Bilgiler
@@ -44,6 +54,11 @@ class AddPatientModal extends Component
             'phone' => 'required|string|max:20',
             'birth_date' => 'required|date|before:today',
             'address' => 'nullable|string',
+            'registration_date' => 'required|date',
+            'needs_paid' => 'nullable|numeric|min:0',
+            'payments.*.payment_method' => 'required|in:nakit,kredi_karti,banka_havalesi,pos,diger',
+            'payments.*.paid_amount' => 'required|numeric|min:0.01',
+            'payments.*.notes' => 'nullable|string|max:500',
 
             'medications' => 'nullable|string',
             'allergies' => 'nullable|string',
@@ -73,6 +88,12 @@ class AddPatientModal extends Component
         'phone.required' => 'Telefon numarası zorunludur.',
         'birth_date.required' => 'Doğum tarihi zorunludur.',
         'birth_date.before' => 'Doğum tarihi bugünden önce olmalıdır.',
+        'needs_paid.numeric' => 'Alınacak ücret sayısal olmalıdır.',
+        'needs_paid.min' => 'Alınacak ücret 0 veya daha büyük olmalıdır.',
+        'payments.*.payment_method.required' => 'Ödeme yöntemi seçilmelidir.',
+        'payments.*.paid_amount.required' => 'Ödenen tutar girilmelidir.',
+        'payments.*.paid_amount.numeric' => 'Ödenen tutar sayısal olmalıdır.',
+        'payments.*.paid_amount.min' => 'Ödenen tutar 0.01 veya daha büyük olmalıdır.',
 
     ];
     
@@ -99,8 +120,21 @@ class AddPatientModal extends Component
             $this->last_name = $patient->last_name;
             $this->tc_identity = $patient->tc_identity;
             $this->phone = $patient->phone;
-            $this->birth_date = $patient->birth_date;
+            $this->birth_date = $patient->birth_date ? $patient->birth_date->format('Y-m-d') : '';
             $this->address = $patient->address;
+            $this->registration_date = $patient->registration_date ? $patient->registration_date->format('Y-m-d\TH:i') : now()->format('Y-m-d\TH:i');
+            $this->needs_paid = $patient->needs_paid;
+            
+            // Mevcut ödemeleri yükle
+            $this->payments = $patient->payments->map(function($payment) {
+                return [
+                    'id' => $payment->id,
+                    'payment_method' => $payment->payment_method,
+                    'paid_amount' => $payment->paid_amount,
+                    'notes' => $payment->notes,
+                    'created_at' => $payment->created_at->format('d.m.Y H:i')
+                ];
+            })->toArray();
 
             $this->medications = $patient->medications;
             $this->allergies = $patient->allergies;
@@ -135,6 +169,16 @@ class AddPatientModal extends Component
         $this->phone = '';
         $this->birth_date = '';
         $this->address = '';
+        $this->registration_date = now()->format('Y-m-d\TH:i');
+        $this->needs_paid = '';
+        
+        // Ödeme bilgilerini sıfırla
+        $this->payments = [];
+        $this->newPayment = [
+            'payment_method' => 'nakit',
+            'paid_amount' => '',
+            'notes' => ''
+        ];
 
         $this->medications = '';
         $this->allergies = '';
@@ -166,6 +210,8 @@ class AddPatientModal extends Component
                 'phone' => $this->phone,
                 'birth_date' => $this->birth_date,
                 'address' => $this->address,
+                'registration_date' => $this->registration_date,
+                'needs_paid' => $this->needs_paid,
 
                 'medications' => $this->medications,
                 'allergies' => $this->allergies,
@@ -184,6 +230,19 @@ class AddPatientModal extends Component
                 $patient = Patient::accessibleBy($user)->find($this->patientId);
                 if ($patient) {
                     $patient->update($patientData);
+                    
+                    // Yeni ödemeleri kaydet (sadece yeni eklenenler)
+                    foreach ($this->payments as $payment) {
+                        if (!isset($payment['id'])) {
+                            $patient->payments()->create([
+                                'user_id' => $user->id,
+                                'payment_method' => $payment['payment_method'],
+                                'paid_amount' => $payment['paid_amount'],
+                                'notes' => $payment['notes']
+                            ]);
+                        }
+                    }
+                    
                     $this->dispatch('patient-updated');
                     $this->dispatch('show-toast', [
                         'type' => 'success',
@@ -201,6 +260,16 @@ class AddPatientModal extends Component
                 $patient = Patient::create($patientData);
                 
                 if ($patient) {
+                    // Ödemeleri kaydet
+                    foreach ($this->payments as $payment) {
+                        $patient->payments()->create([
+                            'user_id' => $user->id,
+                            'payment_method' => $payment['payment_method'],
+                            'paid_amount' => $payment['paid_amount'],
+                            'notes' => $payment['notes']
+                        ]);
+                    }
+                    
                     // Aktivite kaydı oluştur
                     Activity::create([
                         'type' => 'new_patient_registration',
@@ -236,7 +305,52 @@ class AddPatientModal extends Component
     
     public function updated($propertyName)
     {
+        // needs_paid alanı için özel işlem
+        if ($propertyName === 'needs_paid') {
+            // Boş değerleri 0 yap
+            if ($this->needs_paid === null || $this->needs_paid === '') {
+                $this->needs_paid = 0;
+            }
+        }
+        
         $this->validateOnly($propertyName);
+    }
+    
+    public function addPayment()
+    {
+        // Yeni ödeme alanları boş değilse ekle
+        if (!empty($this->newPayment['paid_amount']) && $this->newPayment['paid_amount'] > 0) {
+            $this->payments[] = [
+                'payment_method' => $this->newPayment['payment_method'],
+                'paid_amount' => $this->newPayment['paid_amount'],
+                'notes' => $this->newPayment['notes']
+            ];
+            
+            // Yeni ödeme formunu sıfırla
+            $this->newPayment = [
+                'payment_method' => 'nakit',
+                'paid_amount' => '',
+                'notes' => ''
+            ];
+        }
+    }
+    
+    public function removePayment($index)
+    {
+        unset($this->payments[$index]);
+        $this->payments = array_values($this->payments); // Dizini yeniden düzenle
+    }
+    
+    public function getTotalPaidProperty()
+    {
+        return collect($this->payments)->sum('paid_amount');
+    }
+    
+    public function getRemainingAmountProperty()
+    {
+        $needsPaid = (float) $this->needs_paid;
+        $totalPaid = $this->getTotalPaidProperty();
+        return max(0, $needsPaid - $totalPaid);
     }
     
     private function getDoctorIdForFiltering()

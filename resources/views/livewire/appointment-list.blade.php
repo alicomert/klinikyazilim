@@ -49,6 +49,38 @@
             .content-area {
                 margin-left: 0 !important;
             }
+            .calendar-day {
+                min-height: 45px;
+                font-size: 0.7rem;
+                padding: 2px;
+            }
+            .appointment-slot {
+                font-size: 0.6rem;
+                padding: 1px 2px;
+                margin-bottom: 1px;
+                min-height: 18px;
+            }
+            .mobile-card {
+                display: block;
+            }
+            .mobile-hidden {
+                display: none;
+            }
+            .mobile-table {
+                display: none;
+            }
+        }
+        @media (max-width: 640px) {
+            .calendar-day {
+                min-height: 35px;
+                padding: 1px;
+                font-size: 0.65rem;
+            }
+            .appointment-slot {
+                font-size: 0.55rem;
+                padding: 1px;
+                min-height: 15px;
+            }
         }
     </style>
 
@@ -63,27 +95,30 @@
     <main class="p-6">
         <!-- Calendar Controls -->
         <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-            <div class="flex flex-col md:flex-row md:items-center md:justify-between">
-                <div class="flex items-center space-x-4 mb-4 md:mb-0">
-                    <button wire:click="previousPeriod" class="p-2 rounded-lg hover:bg-gray-100">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <h2 class="text-lg font-semibold">{{ $currentPeriodText }}</h2>
-                    <button wire:click="nextPeriod" class="p-2 rounded-lg hover:bg-gray-100">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                    <button wire:click="goToToday" class="ml-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <div class="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
+                <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+                    <div class="flex items-center justify-center space-x-2">
+                        <button wire:click="previousPeriod" class="p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <h2 class="text-base sm:text-lg font-semibold text-center min-w-0 flex-1">{{ $currentPeriodText }}</h2>
+                        <button wire:click="nextPeriod" class="p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <button wire:click="goToToday" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
                         Bugün
                     </button>
                 </div>
-                <div class="flex items-center space-x-2">
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                     <select wire:model.live="viewMode" class="border rounded-lg px-3 py-2 text-sm">
-                        <option value="weekly">Haftalık Görünüm</option>
-                        <option value="monthly">Aylık Görünüm</option>
+                        <option value="weekly">Haftalık</option>
+                        <option value="monthly">Aylık</option>
                     </select>
-                    <button wire:click="openModal()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2">
+                    <button wire:click="openModal()" class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 text-sm">
                         <i class="fas fa-plus"></i>
-                        <span>Yeni Randevu</span>
+                        <span class="hidden sm:inline">Yeni Randevu</span>
+                        <span class="sm:hidden">Yeni</span>
                     </button>
                 </div>
             </div>
@@ -119,15 +154,15 @@
 
         <!-- Search and Filter -->
         <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                    <input wire:model.live="search" type="text" placeholder="Hasta ara..." class="w-full border rounded-lg px-3 py-2">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="sm:col-span-2 lg:col-span-1">
+                    <input wire:model.live="search" type="text" placeholder="Hasta ara..." class="w-full border rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div>
-                    <input wire:model.live="filterDate" type="date" class="w-full border rounded-lg px-3 py-2">
+                    <input wire:model.live="filterDate" type="date" class="w-full border rounded-lg px-3 py-2 text-sm">
                 </div>
                 <div>
-                    <select wire:model.live="filterStatus" class="w-full border rounded-lg px-3 py-2">
+                    <select wire:model.live="filterStatus" class="w-full border rounded-lg px-3 py-2 text-sm">
                         <option value="">Tüm Durumlar</option>
                         <option value="scheduled">Planlandı</option>
                         <option value="completed">Tamamlandı</option>
@@ -136,7 +171,7 @@
                     </select>
                 </div>
                 <div>
-                    <select wire:model.live="filterType" class="w-full border rounded-lg px-3 py-2">
+                    <select wire:model.live="filterType" class="w-full border rounded-lg px-3 py-2 text-sm">
                         <option value="">Tüm Türler</option>
                         <option value="consultation">Konsültasyon</option>
                         <option value="operation">Operasyon</option>
@@ -286,7 +321,8 @@
             <div class="px-6 py-4 border-b">
                 <h3 class="text-lg font-semibold">Randevular</h3>
             </div>
-            <div class="overflow-x-auto">
+            <!-- Desktop Table View -->
+            <div class="hidden md:block overflow-x-auto mobile-table">
                 <!-- Toplu İşlemler -->
                 @if(count($selectedAppointments) > 0)
                     <div class="mb-4 p-4 bg-blue-50 rounded-lg">
@@ -383,6 +419,98 @@
                     </tbody>
                 </table>
             </div>
+            
+            <!-- Mobile Card View -->
+            <div class="md:hidden mobile-card">
+                <!-- Toplu İşlemler Mobil -->
+                @if(count($selectedAppointments) > 0)
+                    <div class="mb-4 p-4 bg-blue-50 rounded-lg mx-4">
+                        <div class="text-center">
+                            <span class="text-sm font-medium text-blue-800 block mb-3">{{ count($selectedAppointments) }} randevu seçildi</span>
+                            <div class="space-y-2">
+                                <select wire:model="bulkStatus" class="w-full border rounded px-2 py-1 text-sm">
+                                    <option value="">Durum Seçin</option>
+                                    <option value="scheduled">Planlandı</option>
+                                    <option value="completed">Tamamlandı</option>
+                                    <option value="cancelled">İptal Edildi</option>
+                                    <option value="no_show">Gelmedi</option>
+                                </select>
+                                <div class="flex space-x-2">
+                                    <button wire:click="updateBulkStatus" class="flex-1 px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700">Güncelle</button>
+                                    <button wire:click="clearSelection" class="flex-1 px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700">Temizle</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+                
+                @forelse ($appointments as $appointment)
+                    <div class="border-b border-gray-200 p-4">
+                        <div class="flex items-start justify-between mb-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" wire:model.live="selectedAppointments" value="{{ $appointment->id }}" class="rounded mr-3">
+                                <div class="flex-shrink-0 h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-user text-blue-600 text-sm"></i>
+                                </div>
+                                <div class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">{{ $appointment->patient_display_name }}</div>
+                                    <div class="text-xs text-gray-500">{{ $appointment->patient_display_phone }}</div>
+                                </div>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button wire:click="editAppointment({{ $appointment->id }})" class="text-blue-600 hover:text-blue-900 p-1" title="Düzenle">
+                                    <i class="fas fa-edit text-sm"></i>
+                                </button>
+                                <button wire:click="showNotes({{ $appointment->id }})" class="text-green-600 hover:text-green-900 p-1" title="Notlar">
+                                    <i class="fas fa-sticky-note text-sm"></i>
+                                </button>
+                                <button wire:click="confirmDelete({{ $appointment->id }})" class="text-red-600 hover:text-red-900 p-1" title="Sil">
+                                    <i class="fas fa-trash text-sm"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <span class="text-gray-500">Tarih:</span>
+                                <div class="font-medium">{{ $appointment->appointment_date->format('d.m.Y') }}</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Saat:</span>
+                                <div class="font-medium">{{ $appointment->appointment_time->format('H:i') }}</div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Tür:</span>
+                                <div>
+                                    <span class="px-2 py-1 text-xs leading-4 font-semibold rounded-full bg-{{ $appointment->appointment_type_color }}-100 text-{{ $appointment->appointment_type_color }}-800">
+                                        {{ $this->getAppointmentTypeText($appointment->appointment_type) }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Durum:</span>
+                                <div>
+                                    <select wire:change="updateAppointmentStatus({{ $appointment->id }}, $event.target.value)" class="border rounded px-2 py-1 text-xs w-full
+                                        @if($appointment->status == 'scheduled') border-blue-300 text-blue-600
+                                        @elseif($appointment->status == 'completed') border-green-300 text-green-600
+                                        @elseif($appointment->status == 'cancelled') border-red-300 text-red-600
+                                        @else border-yellow-300 text-yellow-600 @endif">
+                                        <option value="scheduled" {{ $appointment->status == 'scheduled' ? 'selected' : '' }}>Planlandı</option>
+                                        <option value="completed" {{ $appointment->status == 'completed' ? 'selected' : '' }}>Tamamlandı</option>
+                                        <option value="cancelled" {{ $appointment->status == 'cancelled' ? 'selected' : '' }}>İptal Edildi</option>
+                                        <option value="no_show" {{ $appointment->status == 'no_show' ? 'selected' : '' }}>Gelmedi</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="p-6 text-center text-gray-500">
+                        Henüz randevu bulunmuyor.
+                    </div>
+                @endforelse
+            </div>
+            
             <div class="px-6 py-4">
                 {{ $appointments->links() }}
             </div>

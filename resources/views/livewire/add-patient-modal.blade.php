@@ -120,6 +120,31 @@
                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                               placeholder="Hastanın adresi"></textarea>
                                 </div>
+                                
+                                <!-- Kayıt Tarihi -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Kayıt Tarihi *</label>
+                                    <input type="datetime-local" 
+                                           wire:model="registration_date" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('registration_date') border-red-500 @enderror">
+                                    @error('registration_date') 
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                                    @enderror
+                                </div>
+                                
+                                <!-- Alınacak Ücret -->
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2">Alınacak Ücret (₺)</label>
+                                    <input type="number" 
+                                           step="0.01"
+                                           min="0"
+                                           wire:model="needs_paid" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('needs_paid') border-red-500 @enderror"
+                                           placeholder="0.00">
+                                    @error('needs_paid') 
+                                        <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                                    @enderror
+                                </div>
                             </div>
                             
                         <!-- Tıbbi Bilgiler -->
@@ -200,6 +225,116 @@
                                               rows="2"
                                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                               placeholder="Planlanmış operasyon"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Ödeme Yönetimi -->
+                    <div class="bg-white rounded-lg p-6 shadow-sm mt-6">
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4 flex items-center border-b border-gray-200 pb-3">
+                            <i class="fas fa-money-bill-wave text-green-600 mr-3"></i>
+                            Ödeme Yönetimi
+                        </h4>
+                        
+                        <!-- Ödeme Özeti -->
+                        @if($needs_paid > 0)
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div class="text-center">
+                                    <div class="text-blue-600 font-semibold">Alınacak Ücret</div>
+                                    <div class="text-lg font-bold text-blue-800">₺{{ number_format($needs_paid, 2) }}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-green-600 font-semibold">Alınan Toplam</div>
+                                    <div class="text-lg font-bold text-green-800">₺{{ number_format($this->totalPaid, 2) }}</div>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-red-600 font-semibold">Kalan Tutar</div>
+                                    <div class="text-lg font-bold text-red-800">₺{{ number_format($this->remainingAmount, 2) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <!-- Mevcut Ödemeler -->
+                        @if(count($payments) > 0)
+                        <div class="mb-4">
+                            <h5 class="text-md font-semibold text-gray-700 mb-3">Yapılan Ödemeler</h5>
+                            <div class="space-y-2">
+                                @foreach($payments as $index => $payment)
+                                <div class="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                                    <div class="flex-1">
+                                        <div class="flex items-center space-x-4">
+                                            <span class="font-semibold text-green-600">₺{{ number_format($payment['paid_amount'], 2) }}</span>
+                                            <span class="text-sm text-gray-600">
+                                                @switch($payment['payment_method'])
+                                                    @case('nakit') Nakit @break
+                                                    @case('kredi_karti') Kredi Kartı @break
+                                                    @case('banka_havalesi') Banka Havalesi @break
+                                                    @case('pos') POS @break
+                                                    @case('diger') Diğer @break
+                                                @endswitch
+                                            </span>
+                                            @if($payment['notes'])
+                                                <span class="text-sm text-gray-500">- {{ $payment['notes'] }}</span>
+                                            @endif
+                                            @if(isset($payment['created_at']))
+                                                <span class="text-xs text-gray-400">{{ $payment['created_at'] }}</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    @if(!isset($payment['id']))
+                                    <button type="button" 
+                                            wire:click="removePayment({{ $index }})"
+                                            class="text-red-500 hover:text-red-700 p-1">
+                                        <i class="fas fa-trash text-sm"></i>
+                                    </button>
+                                    @endif
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        @endif
+                        
+                        <!-- Yeni Ödeme Ekleme -->
+                        <div class="border-t border-gray-200 pt-4">
+                            <h5 class="text-md font-semibold text-gray-700 mb-3">Yeni Ödeme Ekle</h5>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Ödeme Yöntemi</label>
+                                    <select wire:model="newPayment.payment_method" 
+                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                        <option value="nakit">Nakit</option>
+                                        <option value="kredi_karti">Kredi Kartı</option>
+                                        <option value="banka_havalesi">Banka Havalesi</option>
+                                        <option value="pos">POS</option>
+                                        <option value="diger">Diğer</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Tutar (₺)</label>
+                                    <input type="number" 
+                                           step="0.01"
+                                           min="0.01"
+                                           wire:model="newPayment.paid_amount" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="0.00">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-1">Not</label>
+                                    <input type="text" 
+                                           wire:model="newPayment.notes" 
+                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                           placeholder="Ödeme notu">
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="button" 
+                                            wire:click="addPayment"
+                                            class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 transition-all duration-200">
+                                        <i class="fas fa-plus mr-2"></i>
+                                        Ekle
+                                    </button>
                                 </div>
                             </div>
                         </div>
