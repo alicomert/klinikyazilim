@@ -40,11 +40,27 @@
     <!-- Tailwind CSS v3 CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- Alpine.js CDN - Completely disable for Livewire pages to prevent conflicts -->
+    @php
+        $currentPath = request()->path();
+        $isLivewirePage = (substr($currentPath, 0, 8) === 'whatsapp') || 
+                         $currentPath === 'patients' || 
+                         $currentPath === 'payment-reports' || 
+                         $currentPath === 'operations' || 
+                         $currentPath === 'doctor-panel';
+    @endphp
+
+    @if(!$isLivewirePage)
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    @endif
+    
     @livewireStyles
     
     <style>
         .sidebar {
             transition: all 0.3s;
+            z-index: 9999 !important;
+            position: fixed !important;
         }
         .sidebar-collapsed {
             width: 70px;
@@ -60,6 +76,8 @@
         }
         .content-area {
             transition: all 0.3s;
+            position: relative;
+            z-index: 1;
         }
         .content-expanded {
             margin-left: 70px;
@@ -80,7 +98,7 @@
         @media (max-width: 768px) {
             .sidebar {
                 position: fixed;
-                z-index: 50;
+                z-index: 9999 !important;
                 transform: translateX(-100%);
             }
             .sidebar-open {
@@ -89,6 +107,11 @@
             .content-area {
                 margin-left: 0 !important;
             }
+        }
+        
+        /* Mobile bottom navbar z-index */
+        .md\\:hidden.fixed.bottom-0 {
+            z-index: 9998 !important;
         }
         .gradient-bg {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -187,7 +210,7 @@
     <!-- Mobile Menu Button -->
     <button 
         @click="sidebarCollapsed = !sidebarCollapsed" 
-        class="md:hidden fixed top-4 left-4 z-50 bg-white dark:bg-gray-800 p-2 rounded-lg shadow-lg"
+        class="md:hidden fixed top-4 left-4 z-[10000] bg-white dark:bg-gray-800 p-2 rounded-lg shadow-lg"
     >
         <i class="fas fa-bars text-blue-600 dark:text-blue-400"></i>
     </button>
@@ -197,7 +220,7 @@
 
     <!-- Main Content -->
     <div 
-        class="content-area min-h-screen transition-all duration-300"
+        class="content-area min-h-screen transition-all duration-300 ml-64"
         :class="{
             'ml-64': !sidebarCollapsed,
             'ml-16': sidebarCollapsed
@@ -207,7 +230,7 @@
         @include('components.header')
 
         <!-- Main Content -->
-        <main id="spa-container" class="p-6">
+        <main id="spa-container" class="p-6 pt-20">
             <div class="max-w-7xl mx-auto">
                 @yield('content')
             </div>
@@ -218,30 +241,37 @@
     
     @stack('scripts')
     
-    <!-- Alpine.js configuration for Livewire -->
+    <!-- Alpine.js configuration - Only for Livewire pages -->
+    @if($isLivewirePage)
     <script>
         document.addEventListener('livewire:init', () => {
-            // Alpine.js is now available via Livewire
+            // Alpine.js is now available via Livewire - no conflicts
+            console.log('Livewire Alpine.js initialized');
         });
     </script>
+    @endif
     
     <script>
-        function appData() {
+        // Global appData function - Compatible with both CDN and Livewire Alpine.js
+        window.appData = function() {
             return {
                 sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
                 currentPage: 'dashboard',
                 loading: false,
                 
                 init() {
-                    this.currentPage = this.pathToPageId(window.location.pathname);
-                    this.initRouter();
-                    
-                    this.$watch('sidebarCollapsed', value => {
-                        localStorage.setItem('sidebarCollapsed', value);
-                    });
-                    
-                    window.addEventListener('popstate', () => {
-                        this.navigate(window.location.pathname, true);
+                    // Wait for Alpine to be ready
+                    this.$nextTick(() => {
+                        this.currentPage = this.pathToPageId(window.location.pathname);
+                        this.initRouter();
+                        
+                        this.$watch('sidebarCollapsed', value => {
+                            localStorage.setItem('sidebarCollapsed', value);
+                        });
+                        
+                        window.addEventListener('popstate', () => {
+                            this.navigate(window.location.pathname, true);
+                        });
                     });
                 },
                 
@@ -298,6 +328,13 @@
                             return 'doctor-panel';
                         case '/messages':
                             return 'messages';
+                        case '/whatsapp':
+                        case '/whatsapp/dashboard':
+                        case '/whatsapp/configs':
+                        case '/whatsapp/templates':
+                        case '/whatsapp/messages':
+                        case '/whatsapp/reports':
+                            return 'whatsapp';
                         default:
                             return 'dashboard';
                     }
@@ -562,7 +599,35 @@
         }
     </script>
     
-    <!-- PWA JavaScript -->
-    <script src="{{ asset('pwa.js') }}"></script>
+    <!-- PWA JavaScript - Enhanced for Livewire compatibility -->
+    <script>
+        // Ensure PWA.js loads after Alpine.js is ready
+        @if($isLivewirePage)
+        document.addEventListener('livewire:init', () => {
+            // Load PWA after Livewire Alpine is ready
+            loadPWAScript();
+        });
+        @else
+        document.addEventListener('alpine:init', () => {
+            // Load PWA after CDN Alpine is ready
+            loadPWAScript();
+        });
+        @endif
+        
+        function loadPWAScript() {
+            if (!window.pwaLoaded) {
+                window.pwaLoaded = true;
+                const script = document.createElement('script');
+                script.src = "{{ asset('pwa.js') }}";
+                script.onload = () => {
+                    console.log('PWA.js loaded successfully');
+                };
+                script.onerror = () => {
+                    console.error('PWA.js failed to load');
+                };
+                document.head.appendChild(script);
+            }
+        }
+    </script>
 </body>
 </html>

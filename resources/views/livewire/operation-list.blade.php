@@ -1148,9 +1148,11 @@
         }
         
         // Dönem değiştiğinde localStorage'a kaydet
-        Livewire.on('statsperiodchanged', function(period) {
-            localStorage.setItem('operation_stats_period', period);
-        });
+        if (typeof Livewire !== 'undefined') {
+            Livewire.on('statsperiodchanged', function(period) {
+                localStorage.setItem('operation_stats_period', period);
+            });
+        }
 
         // Session flash mesajlarını toast olarak göster
         @if (session()->has('message'))

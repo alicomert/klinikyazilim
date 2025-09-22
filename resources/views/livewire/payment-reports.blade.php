@@ -1,4 +1,4 @@
-<div class="p-6 bg-gray-50 min-h-screen">
+<div>
     <!-- Sayfa Başlığı -->
     <div class="mb-6">
         <h1 class="text-3xl font-bold text-gray-900 mb-2">Ödeme Raporları</h1>
@@ -8,14 +8,14 @@
     <!-- İstatistik Kartları -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         <!-- Toplam Ödeme -->
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+        <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl shadow-lg p-6 border border-blue-200 hover:shadow-xl transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-600">Toplam Ödeme</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $totalPayments }}</p>
+                    <p class="text-sm font-medium text-blue-700">Toplam Ödeme</p>
+                    <p class="text-2xl font-bold text-blue-900">{{ $totalPayments }}</p>
                 </div>
-                <div class="p-3 bg-blue-100 rounded-full">
-                    <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-3 bg-blue-500 rounded-full shadow-md">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                     </svg>
                 </div>
@@ -23,14 +23,14 @@
         </div>
 
         <!-- Toplam Tutar -->
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-500">
+        <div class="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl shadow-lg p-6 border border-emerald-200 hover:shadow-xl transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-600">Toplam Tutar</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $this->formatCurrency($totalAmount) }}</p>
+                    <p class="text-sm font-medium text-emerald-700">Toplam Tutar</p>
+                    <p class="text-2xl font-bold text-emerald-900">{{ $this->formatCurrency($totalAmount) }}</p>
                 </div>
-                <div class="p-3 bg-green-100 rounded-full">
-                    <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-3 bg-emerald-500 rounded-full shadow-md">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
                     </svg>
                 </div>
@@ -38,14 +38,14 @@
         </div>
 
         <!-- Ortalama Ödeme -->
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
+        <div class="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-lg p-6 border border-amber-200 hover:shadow-xl transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-600">Ortalama Ödeme</p>
-                    <p class="text-2xl font-bold text-gray-900">{{ $this->formatCurrency($averagePayment) }}</p>
+                    <p class="text-sm font-medium text-amber-700">Ortalama Ödeme</p>
+                    <p class="text-2xl font-bold text-amber-900">{{ $this->formatCurrency($averagePayment) }}</p>
                 </div>
-                <div class="p-3 bg-yellow-100 rounded-full">
-                    <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-3 bg-amber-500 rounded-full shadow-md">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                     </svg>
                 </div>
@@ -53,17 +53,17 @@
         </div>
 
         <!-- Ödeme Yapmayan Hastalar -->
-        <div class="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-500">
+        <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-xl shadow-lg p-6 border border-red-200 hover:shadow-xl transition-all duration-300">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm font-medium text-gray-600">Ödeme Yapmayanlar</p>
-                    <p class="text-2xl font-bold text-red-600">{{ $overduePatients->count() }}</p>
+                    <p class="text-sm font-medium text-red-700">Ödeme Yapmayanlar</p>
+                    <p class="text-2xl font-bold text-red-900">{{ $overduePatients->count() }}</p>
                     @if($overduePatients->count() > 0)
-                        <p class="text-xs text-red-500 mt-1">{{ $overdueSettings['days'] }} gün üzeri</p>
+                        <p class="text-xs text-red-600 mt-1">{{ $overdueSettings['days'] }} gün üzeri</p>
                     @endif
                 </div>
-                <div class="p-3 bg-red-100 rounded-full">
-                    <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div class="p-3 bg-red-500 rounded-full shadow-md">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
                     </svg>
                 </div>
@@ -73,7 +73,7 @@
 
     <!-- Ödeme Yapmayan Hastalar Uyarısı -->
     @if($overduePatients->count() > 0 && $overdueSettings['showWarning'])
-        <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+        <div class="bg-gradient-to-r from-red-50 to-red-100 border border-red-200 rounded-xl p-6 mb-6 shadow-lg">
             <div class="flex items-center justify-between">
                 <div class="flex">
                     <div class="flex-shrink-0">
@@ -100,7 +100,7 @@
     @endif
 
     <!-- Filtreleme ve Arama -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <!-- Arama -->
             <div>
@@ -188,7 +188,7 @@
     </div>
 
     <!-- Ödeme Yapmayan Hastalar Ayarları -->
-    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 border border-gray-100">
         <h3 class="text-lg font-semibold text-gray-900 mb-4">Ödeme Uyarı Ayarları</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -206,7 +206,7 @@
     </div>
 
     <!-- Ödemeler Tablosu -->
-    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+    <div class="bg-white rounded-xl shadow-lg overflow-hidden border border-gray-100">
         <div class="px-6 py-4 border-b border-gray-200">
             <h3 class="text-lg font-semibold text-gray-900">Ödeme Listesi</h3>
         </div>
@@ -970,17 +970,29 @@
 <!-- JavaScript for localStorage integration -->
 <script>
     document.addEventListener('livewire:init', () => {
+        // Get the current Livewire component instance
+        const component = Livewire.find(document.querySelector('[wire\\:id]').getAttribute('wire:id'));
+        
         // localStorage'dan ayarları yükle
         const savedSettings = localStorage.getItem('overdueSettings');
-        if (savedSettings) {
-            const settings = JSON.parse(savedSettings);
-            @this.overdueSettings = settings;
-            @this.overdueDays = settings.days;
+        if (savedSettings && component) {
+            try {
+                const settings = JSON.parse(savedSettings);
+                component.set('overdueSettings', settings);
+                component.set('overdueDays', settings.days);
+            } catch (e) {
+                console.error('Error loading overdue settings from localStorage:', e);
+            }
         }
         
         // Ayarları localStorage'a kaydet
         Livewire.on('save-overdue-settings', (settings) => {
-            localStorage.setItem('overdueSettings', JSON.stringify(settings[0]));
+            try {
+                localStorage.setItem('overdueSettings', JSON.stringify(settings[0]));
+                console.log('Overdue settings saved to localStorage');
+            } catch (e) {
+                console.error('Error saving overdue settings to localStorage:', e);
+            }
         });
         
         // Flash mesajları otomatik gizle
@@ -992,5 +1004,34 @@
                 setTimeout(() => msg.remove(), 500);
             });
         }, 3000);
+    });
+    
+    // Fallback for DOMContentLoaded if Livewire is not ready yet
+    document.addEventListener('DOMContentLoaded', function() {
+        // Wait for Livewire to be ready
+        if (typeof Livewire !== 'undefined') {
+            const checkComponent = () => {
+                const wireElement = document.querySelector('[wire\\:id]');
+                if (wireElement) {
+                    const component = Livewire.find(wireElement.getAttribute('wire:id'));
+                    if (component) {
+                        const savedSettings = localStorage.getItem('overdueSettings');
+                        if (savedSettings) {
+                            try {
+                                const settings = JSON.parse(savedSettings);
+                                component.set('overdueSettings', settings);
+                                component.set('overdueDays', settings.days);
+                            } catch (e) {
+                                console.error('Error loading settings:', e);
+                            }
+                        }
+                    }
+                } else {
+                    // Retry after a short delay
+                    setTimeout(checkComponent, 100);
+                }
+            };
+            checkComponent();
+        }
     });
 </script>

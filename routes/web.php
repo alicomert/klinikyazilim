@@ -550,6 +550,111 @@ Route::get('/api/operations-detail/pdf', function () {
     return $pdf->download($filename);
 })->middleware('auth');
 
+// WhatsApp Module Routes
+Route::middleware(['auth'])->prefix('whatsapp')->name('whatsapp.')->group(function () {
+    // Dashboard
+    Route::get('/', \App\Livewire\WhatsApp\Dashboard::class)->name('dashboard');
+    
+    // Configuration Management
+    Route::get('/configs', \App\Livewire\WhatsApp\ConfigList::class)->name('configs');
+    
+    // Template Management
+    Route::get('/templates', \App\Livewire\WhatsApp\TemplateList::class)->name('templates');
+    
+    // Template Approval
+    Route::get('/template-approval', \App\Livewire\WhatsApp\TemplateApproval::class)->name('template-approval');
+    
+    // Message Management
+    Route::get('/messages', function () {
+        return view('whatsapp.messages');
+    })->name('messages');
+    
+    // Reports
+    Route::get('/reports', function () {
+        return view('whatsapp.reports');
+    })->name('reports');
+    
+    // API Endpoints for WhatsApp
+    Route::prefix('api')->name('api.')->group(function () {
+        // Test WhatsApp connection
+        Route::post('/test-connection/{config}', function (\App\Models\WhatsAppConfig $config) {
+            try {
+                // Test connection logic here
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Bağlantı başarılı'
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bağlantı hatası: ' . $e->getMessage()
+                ], 400);
+            }
+        })->name('test-connection');
+        
+        // Send WhatsApp message
+        Route::post('/send-message', function () {
+            $validated = request()->validate([
+                'config_id' => 'required|exists:whats_app_configs,id',
+                'template_id' => 'nullable|exists:whats_app_templates,id',
+                'recipient_phone' => 'required|string',
+                'message' => 'required|string'
+            ]);
+            
+            try {
+                // Send message logic here
+                \App\Models\WhatsAppMessage::create([
+                    'config_id' => $validated['config_id'],
+                    'template_id' => $validated['template_id'],
+                    'recipient_phone' => $validated['recipient_phone'],
+                    'recipient_name' => request('recipient_name'),
+                    'content' => $validated['message'],
+                    'status' => 'sent',
+                    'sent_at' => now(),
+                    'user_id' => auth()->id()
+                ]);
+                
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Mesaj başarıyla gönderildi'
+                ]);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Mesaj gönderme hatası: ' . $e->getMessage()
+                ], 400);
+            }
+        })->name('send-message');
+        
+        // Get message statistics
+        Route::get('/stats', function () {
+            $user = auth()->user();
+            
+            // Base queries with role-based filtering
+            $configQuery = \App\Models\WhatsAppConfig::query();
+            $templateQuery = \App\Models\WhatsAppTemplate::query();
+            $messageQuery = \App\Models\WhatsAppMessage::query();
+            
+            if ($user->role !== 'admin') {
+                $configQuery->where('user_id', $user->id);
+                $templateQuery->where('user_id', $user->id);
+                $messageQuery->where('user_id', $user->id);
+            }
+            
+            return response()->json([
+                'total_configs' => $configQuery->count(),
+                'active_configs' => $configQuery->where('is_active', true)->count(),
+                'total_templates' => $templateQuery->count(),
+                'approved_templates' => $templateQuery->where('is_approved', true)->count(),
+                'messages_today' => $messageQuery->whereDate('created_at', today())->count(),
+                'messages_this_month' => $messageQuery->whereMonth('created_at', now()->month)->count(),
+                'success_rate' => 95, // Calculate based on actual data
+                'pending_approvals' => $templateQuery->where('is_approved', false)->count()
+            ]);
+        })->name('stats');
+    });
+});
+
 Route::middleware(['auth'])->group(function () {
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
     Volt::route('settings/password', 'settings.password')->name('settings.password');

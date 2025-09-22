@@ -20,10 +20,7 @@
 @fluxAppearance
 
 <!-- Livewire Scripts -->
-@livewireStyles
-
-<!-- Alpine.js CDN -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+<!-- Alpine.js will be loaded in body -->
 
 <!-- Custom Styles for Doctor Panel -->
 <style>

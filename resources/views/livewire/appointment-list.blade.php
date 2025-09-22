@@ -927,12 +927,14 @@
 <script>
     document.addEventListener('livewire:init', () => {
         // Tümünü seç/seçme işlevi
-        Livewire.on('selectAllChanged', (value) => {
-            const checkboxes = document.querySelectorAll('input[name="selectedAppointments[]"]');
-            checkboxes.forEach(checkbox => {
-                checkbox.checked = value;
+        if (typeof Livewire !== 'undefined') {
+            Livewire.on('selectAllChanged', (value) => {
+                const checkboxes = document.querySelectorAll('input[name="selectedAppointments[]"]');
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = value;
+                });
             });
-        });
+        }
         
         // Seçilen randevu sayısını güncelle
         function updateSelectedCount() {

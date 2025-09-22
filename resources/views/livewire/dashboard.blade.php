@@ -202,11 +202,13 @@
         });
         
         // Livewire component güncellendiğinde
-        Livewire.on('refreshCharts', function() {
-            setTimeout(function() {
-                initializeDashboardCharts();
-            }, 100);
-        });
+        if (typeof Livewire !== 'undefined') {
+            Livewire.on('refreshCharts', function() {
+                setTimeout(function() {
+                    initializeDashboardCharts();
+                }, 100);
+            });
+        }
         
         function initializeDashboardCharts() {
             // Destroy existing charts

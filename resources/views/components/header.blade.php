@@ -1,6 +1,14 @@
 <!-- Top Bar -->
 <header class="bg-white shadow-sm py-4 px-6 flex items-center justify-between transition-colors duration-300">
     <div class="flex items-center space-x-4">
+        <!-- Sidebar Toggle Button -->
+        <button 
+            @click="toggleSidebar()"
+            class="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 text-gray-600 hover:text-gray-800"
+        >
+            <i class="fas fa-bars text-lg"></i>
+        </button>
+        
         <h1 class="text-2xl font-bold text-gray-800" x-text="getPageTitle(currentPage)"></h1>
         <div class="text-sm text-gray-500 hidden sm:block">
             <i class="fas fa-calendar-alt mr-1"></i>
