@@ -78,6 +78,16 @@ self.addEventListener('fetch', event => {
     return;
   }
   
+  // Chrome extension ve desteklenmeyen scheme'leri filtrele
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+  
+  // Chrome extension URL'lerini filtrele
+  if (url.protocol === 'chrome-extension:' || url.protocol === 'moz-extension:') {
+    return;
+  }
+  
   // API istekleri için Network First stratejisi
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/livewire/')) {
     event.respondWith(
@@ -88,7 +98,12 @@ self.addEventListener('fetch', event => {
             const responseClone = response.clone();
             caches.open(CACHE_NAME)
               .then(cache => {
-                cache.put(request, responseClone);
+                // Sadece desteklenen scheme'leri cache'le
+                if (request.url.startsWith('http://') || request.url.startsWith('https://')) {
+                  cache.put(request, responseClone).catch(err => {
+                    console.warn('Cache put failed:', err);
+                  });
+                }
               });
           }
           return response;
@@ -123,7 +138,12 @@ self.addEventListener('fetch', event => {
                 const responseClone = response.clone();
                 caches.open(CACHE_NAME)
                   .then(cache => {
-                    cache.put(request, responseClone);
+                    // Sadece desteklenen scheme'leri cache'le
+                    if (request.url.startsWith('http://') || request.url.startsWith('https://')) {
+                      cache.put(request, responseClone).catch(err => {
+                        console.warn('Cache put failed:', err);
+                      });
+                    }
                   });
               }
               return response;
@@ -145,7 +165,12 @@ self.addEventListener('fetch', event => {
             const responseClone = response.clone();
             caches.open(CACHE_NAME)
               .then(cache => {
-                cache.put(request, responseClone);
+                // Sadece desteklenen scheme'leri cache'le
+                if (request.url.startsWith('http://') || request.url.startsWith('https://')) {
+                  cache.put(request, responseClone).catch(err => {
+                    console.warn('Cache put failed:', err);
+                  });
+                }
               });
           }
           return response;

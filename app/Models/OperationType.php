@@ -10,8 +10,6 @@ class OperationType extends Model
 {
     protected $fillable = [
         'name',
-        'value',
-        'description',
         'is_active',
         'sort_order',
         'created_by'

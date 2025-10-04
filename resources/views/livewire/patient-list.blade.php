@@ -178,9 +178,20 @@
                         <div class="flex items-end">
                             <button type="button" 
                                     wire:click="addPayment"
+                                    wire:loading.attr="disabled"
+                                    wire:loading.class="opacity-50 cursor-not-allowed"
                                     class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 transition-all duration-200">
-                                <i class="fas fa-plus mr-2"></i>
-                                Ekle
+                                <span wire:loading.remove wire:target="addPayment">
+                                    <i class="fas fa-plus mr-2"></i>
+                                    Ekle
+                                </span>
+                                <span wire:loading wire:target="addPayment" class="flex items-center justify-center">
+                                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Ekleniyor...
+                                </span>
                             </button>
                         </div>
                     </div>
@@ -414,19 +425,28 @@
                     </div>
                     <div class="flex justify-end space-x-2 mt-3">
                         <button wire:click="showPatientDetails({{ $patient->id }})" 
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-50 cursor-not-allowed"
                                 class="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-100 rounded-full transition-colors duration-200" 
                                 title="Detayları Görüntüle">
-                            <i class="fas fa-eye"></i>
+                            <i class="fas fa-eye" wire:loading.remove wire:target="showPatientDetails"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="showPatientDetails"></i>
                         </button>
                         <button wire:click="showNotes({{ $patient->id }})" 
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-50 cursor-not-allowed"
                                 class="text-purple-600 hover:text-purple-800 p-2 hover:bg-purple-100 rounded-full transition-colors duration-200" 
                                 title="Notlar">
-                            <i class="fas fa-sticky-note"></i>
+                            <i class="fas fa-sticky-note" wire:loading.remove wire:target="showNotes"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="showNotes"></i>
                         </button>
                         <button wire:click="showPayments({{ $patient->id }})" 
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-50 cursor-not-allowed"
                                 class="text-green-600 hover:text-green-800 p-2 hover:bg-green-100 rounded-full transition-colors duration-200" 
                                 title="Ödemeler">
-                            <i class="fas fa-money-bill-wave"></i>
+                            <i class="fas fa-money-bill-wave" wire:loading.remove wire:target="showPayments"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="showPayments"></i>
                         </button>
                         <button wire:click="editPatient({{ $patient->id }})" 
                                 wire:loading.attr="disabled"
@@ -531,19 +551,28 @@
                             </td>
                             <td x-show="columns.actions" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <button wire:click="showPatientDetails({{ $patient->id }})" 
+                                        wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="text-blue-600 hover:text-blue-800 mr-3 p-2 hover:bg-blue-100 rounded-full transition-colors duration-200" 
                                         title="Detayları Görüntüle">
-                                    <i class="fas fa-eye text-lg"></i>
+                                    <i class="fas fa-eye text-lg" wire:loading.remove wire:target="showPatientDetails"></i>
+                                    <i class="fas fa-spinner fa-spin text-lg" wire:loading wire:target="showPatientDetails"></i>
                                 </button>
                                 <button wire:click="showNotes({{ $patient->id }})" 
+                                        wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="text-purple-600 hover:text-purple-800 mr-3 p-2 hover:bg-purple-100 rounded-full transition-colors duration-200" 
                                         title="Notlar">
-                                    <i class="fas fa-sticky-note text-lg"></i>
+                                    <i class="fas fa-sticky-note text-lg" wire:loading.remove wire:target="showNotes"></i>
+                                    <i class="fas fa-spinner fa-spin text-lg" wire:loading wire:target="showNotes"></i>
                                 </button>
                                 <button wire:click="showPayments({{ $patient->id }})" 
+                                        wire:loading.attr="disabled"
+                                        wire:loading.class="opacity-50 cursor-not-allowed"
                                         class="text-green-600 hover:text-green-800 mr-3 p-2 hover:bg-green-100 rounded-full transition-colors duration-200" 
                                         title="Ödemeler">
-                                    <i class="fas fa-money-bill-wave text-lg"></i>
+                                    <i class="fas fa-money-bill-wave text-lg" wire:loading.remove wire:target="showPayments"></i>
+                                    <i class="fas fa-spinner fa-spin text-lg" wire:loading wire:target="showPayments"></i>
                                 </button>
                                 <button wire:click="editPatient({{ $patient->id }})" 
                                         wire:loading.attr="disabled"

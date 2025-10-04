@@ -915,14 +915,14 @@
                                 <div class="flex justify-between items-center p-3 border-b border-gray-100 hover:bg-gray-50">
                                     <div>
                                         <span class="font-medium text-gray-900">{{ $type['name'] }}</span>
-                                        <span class="text-sm text-gray-500 ml-2">({{ $type['value'] }})</span>
+                                        <span class="text-sm text-gray-500 ml-2">(ID: {{ $type['id'] }})</span>
                                     </div>
                                     <div class="flex space-x-2">
-                                        <button wire:click="editOperationType('{{ $type['value'] }}')" 
+                                        <button wire:click="editOperationType({{ $type['id'] }})" 
                                                 class="bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded">
                                             Düzenle
                                         </button>
-                                        <button wire:click="deleteOperationType('{{ $type['value'] }}')" 
+                                        <button wire:click="deleteOperationType({{ $type['id'] }})" 
                                                 wire:confirm="Bu işlem türünü silmek istediğinizden emin misiniz?"
                                                 class="bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded">
                                             Sil

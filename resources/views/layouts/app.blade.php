@@ -34,6 +34,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Loading Animations CSS -->
+    <link rel="stylesheet" href="{{ asset('css/loading-animations.css') }}">
+    
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -47,7 +50,8 @@
                          $currentPath === 'patients' || 
                          $currentPath === 'payment-reports' || 
                          $currentPath === 'operations' || 
-                         $currentPath === 'doctor-panel';
+                         $currentPath === 'doctor-panel' ||
+                         $currentPath === 'clinic';
     @endphp
 
     @if(!$isLivewirePage)
@@ -207,6 +211,9 @@
     @stack('styles')
 </head>
 <body class="bg-gray-50 transition-colors duration-300" x-data="appData()" x-init="init()">
+    <!-- Global Loading Spinner for Livewire -->
+    <x-livewire-loading />
+    
     <!-- Mobile Menu Button -->
     <button 
         @click="sidebarCollapsed = !sidebarCollapsed" 
@@ -629,5 +636,8 @@
             }
         }
     </script>
+    
+    <!-- Loading States JavaScript -->
+    <script src="{{ asset('js/loading-states.js') }}"></script>
 </body>
 </html>

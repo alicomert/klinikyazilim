@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('patient_id')->constrained('patients')->onDelete('cascade');
-            $table->enum('payment_method', ['nakit', 'kredi_karti', 'banka_havalesi', 'pos', 'diger'])->default('nakit');
+            $table->enum('payment_method', ['nakit', 'kredi_karti', 'banka_havalesi', 'pos', 'cek', 'diger'])->default('nakit');
             $table->decimal('paid_amount', 10, 2);
             $table->text('notes')->nullable();
             $table->timestamps();

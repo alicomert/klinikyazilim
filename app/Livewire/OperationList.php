@@ -61,7 +61,7 @@ class OperationList extends Component
     public $editingOperationType = null;
     
     // Yeni İşlem Tipi Ekle sistemi için ayrı property'ler
-    public $operationTypeForm = ['name' => '', 'value' => ''];
+    public $operationTypeForm = ['name' => ''];
     
     public $newOperationDetail = ['name' => '', 'description' => ''];
     
@@ -75,7 +75,7 @@ class OperationList extends Component
     public $processSearch = '';
     public $showProcessDropdown = false;
     public $showAddProcessModal = false;
-    public $newProcess = ['name' => '', 'value' => '', 'description' => ''];
+    public $newProcess = ['name' => '', 'description' => ''];
 
     // Validation rules
     protected $rules = [
@@ -1199,24 +1199,12 @@ class OperationList extends Component
             'operationTypeForm.name' => 'required|string|max:255'
         ]);
 
-        // Name'den otomatik benzersiz value oluştur
-        $baseValue = \Str::slug($this->operationTypeForm['name'], '_');
-        $value = $baseValue;
-        $counter = 1;
-        
-        // Benzersiz value bulana kadar dene
-        while (OperationType::where('value', $value)->exists()) {
-            $value = $baseValue . '_' . $counter;
-            $counter++;
-        }
-
         // created_by logic: doctor ise kendi id'si, nurse/secretary ise doctor_id'si
         $user = auth()->user();
         $createdBy = $user->role === 'doctor' ? $user->id : $user->doctor_id;
 
         $operationType = OperationType::create([
             'name' => $this->operationTypeForm['name'],
-            'value' => $value,
             'is_active' => true,
             'sort_order' => (OperationType::max('sort_order') ?? 0) + rand(1, 100),
             'created_by' => $createdBy
@@ -1224,7 +1212,7 @@ class OperationList extends Component
 
         $this->loadOperationTypes();
         $this->selectedOperationType = $operationType->id;
-        $this->newOperation['process'] = $operationType->value;
+        $this->newOperation['process'] = $operationType->name;
         $this->closeAddOperationTypeModal();
 
         // Event dispatch ederek diğer component'lerin güncellenmesini sağla
@@ -1233,29 +1221,26 @@ class OperationList extends Component
         session()->flash('message', 'Yeni işlem türü başarıyla eklendi.');
     }
 
-    public function editOperationType($operationTypeValue)
+    public function editOperationType($operationTypeId)
     {
-        $operationType = OperationType::where('value', $operationTypeValue)->firstOrFail();
+        $operationType = OperationType::findOrFail($operationTypeId);
         
         $this->editingOperationType = $operationType->id;
         $this->operationTypeForm = [
-            'name' => $operationType->name,
-            'value' => $operationType->value
+            'name' => $operationType->name
         ];
     }
 
     public function updateOperationType()
     {
         $this->validate([
-            'operationTypeForm.name' => 'required|string|max:255',
-            'operationTypeForm.value' => 'required|string|max:255|unique:operation_types,value,' . $this->editingOperationType
+            'operationTypeForm.name' => 'required|string|max:255'
         ]);
 
         $operationType = OperationType::findOrFail($this->editingOperationType);
         
         $operationType->update([
-            'name' => $this->operationTypeForm['name'],
-            'value' => $this->operationTypeForm['value']
+            'name' => $this->operationTypeForm['name']
         ]);
 
         $this->loadOperationTypes();
@@ -1264,9 +1249,9 @@ class OperationList extends Component
         session()->flash('message', 'İşlem türü başarıyla güncellendi.');
     }
 
-    public function deleteOperationType($operationTypeValue)
+    public function deleteOperationType($operationTypeId)
     {
-        $operationType = OperationType::where('value', $operationTypeValue)->firstOrFail();
+        $operationType = OperationType::findOrFail($operationTypeId);
 
         $operationType->delete();
         $this->loadOperationTypes();
@@ -1277,7 +1262,7 @@ class OperationList extends Component
     public function resetOperationTypeForm()
     {
         $this->editingOperationType = null;
-        $this->operationTypeForm = ['name' => '', 'value' => ''];
+        $this->operationTypeForm = ['name' => ''];
     }
 
     public function showAddOperationDetailModal()

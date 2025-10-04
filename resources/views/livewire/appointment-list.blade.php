@@ -98,16 +98,31 @@
             <div class="flex flex-col space-y-4 md:flex-row md:items-center md:justify-between md:space-y-0">
                 <div class="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                     <div class="flex items-center justify-center space-x-2">
-                        <button wire:click="previousPeriod" class="p-2 rounded-lg hover:bg-gray-100">
-                            <i class="fas fa-chevron-left"></i>
+                        <button wire:click="previousPeriod" 
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-50 cursor-not-allowed"
+                                class="p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-chevron-left" wire:loading.remove wire:target="previousPeriod"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="previousPeriod"></i>
                         </button>
                         <h2 class="text-base sm:text-lg font-semibold text-center min-w-0 flex-1">{{ $currentPeriodText }}</h2>
-                        <button wire:click="nextPeriod" class="p-2 rounded-lg hover:bg-gray-100">
-                            <i class="fas fa-chevron-right"></i>
+                        <button wire:click="nextPeriod" 
+                                wire:loading.attr="disabled"
+                                wire:loading.class="opacity-50 cursor-not-allowed"
+                                class="p-2 rounded-lg hover:bg-gray-100">
+                            <i class="fas fa-chevron-right" wire:loading.remove wire:target="nextPeriod"></i>
+                            <i class="fas fa-spinner fa-spin" wire:loading wire:target="nextPeriod"></i>
                         </button>
                     </div>
-                    <button wire:click="goToToday" class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
-                        Bugün
+                    <button wire:click="goToToday" 
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-50 cursor-not-allowed"
+                            class="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+                        <span wire:loading.remove wire:target="goToToday">Bugün</span>
+                        <span wire:loading wire:target="goToToday" class="flex items-center">
+                            <i class="fas fa-spinner fa-spin mr-1"></i>
+                            Yükleniyor...
+                        </span>
                     </button>
                 </div>
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
@@ -115,10 +130,19 @@
                         <option value="weekly">Haftalık</option>
                         <option value="monthly">Aylık</option>
                     </select>
-                    <button wire:click="openModal()" class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 text-sm">
-                        <i class="fas fa-plus"></i>
-                        <span class="hidden sm:inline">Yeni Randevu</span>
-                        <span class="sm:hidden">Yeni</span>
+                    <button wire:click="openModal()" 
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-50 cursor-not-allowed"
+                            class="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center space-x-2 text-sm">
+                        <span wire:loading.remove wire:target="openModal" class="flex items-center space-x-2">
+                            <i class="fas fa-plus"></i>
+                            <span class="hidden sm:inline">Yeni Randevu</span>
+                            <span class="sm:hidden">Yeni</span>
+                        </span>
+                        <span wire:loading wire:target="openModal" class="flex items-center space-x-2">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <span>Yükleniyor...</span>
+                        </span>
                     </button>
                 </div>
             </div>
@@ -925,19 +949,12 @@
 </div>
 
 <script>
-    document.addEventListener('livewire:init', () => {
-        // Tümünü seç/seçme işlevi
-        if (typeof Livewire !== 'undefined') {
-            Livewire.on('selectAllChanged', (value) => {
-                const checkboxes = document.querySelectorAll('input[name="selectedAppointments[]"]');
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = value;
-                });
-            });
-        }
-        
+    document.addEventListener('DOMContentLoaded', function() {
         // Seçilen randevu sayısını güncelle
         function updateSelectedCount() {
+            const checkboxes = document.querySelectorAll('input[name="selectedAppointments[]"]');
+            if (checkboxes.length === 0) return;
+            
             const selectedCount = document.querySelectorAll('input[name="selectedAppointments[]"]:checked').length;
             const countElement = document.getElementById('selectedCount');
             if (countElement) {
@@ -953,12 +970,26 @@
         
         // Checkbox değişikliklerini dinle
         document.addEventListener('change', function(e) {
-            if (e.target.name === 'selectedAppointments[]') {
+            if (e.target && e.target.name === 'selectedAppointments[]') {
                 updateSelectedCount();
             }
         });
         
         // Sayfa yüklendiğinde sayıyı güncelle
-        updateSelectedCount();
+        setTimeout(updateSelectedCount, 100);
+    });
+
+    // Livewire event listeners
+    document.addEventListener('livewire:init', () => {
+        if (typeof Livewire !== 'undefined') {
+            Livewire.on('selectAllChanged', (value) => {
+                const checkboxes = document.querySelectorAll('input[name="selectedAppointments[]"]');
+                checkboxes.forEach(checkbox => {
+                    if (checkbox) {
+                        checkbox.checked = value;
+                    }
+                });
+            });
+        }
     });
 </script>

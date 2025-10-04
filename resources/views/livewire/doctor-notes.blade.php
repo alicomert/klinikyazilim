@@ -6,9 +6,18 @@
                 <i class="fas fa-sticky-note text-indigo-600 mr-3"></i>
                 Doktor Notları
             </h2>
-            <button wire:click="openModal" class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
-                <i class="fas fa-plus"></i>
-                <span>Yeni Not Ekle</span>
+            <button wire:click="openModal" 
+                    wire:loading.attr="disabled"
+                    wire:loading.class="opacity-50 cursor-not-allowed"
+                    class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
+                <span wire:loading.remove wire:target="openModal" class="flex items-center space-x-2">
+                    <i class="fas fa-plus"></i>
+                    <span>Yeni Not Ekle</span>
+                </span>
+                <span wire:loading wire:target="openModal" class="flex items-center space-x-2">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>Yükleniyor...</span>
+                </span>
             </button>
         </div>
 
@@ -18,12 +27,15 @@
                 <nav class="-mb-px flex space-x-8">
                     <button 
                         wire:click="switchNotesTab('my_notes')"
+                        wire:loading.attr="disabled"
+                        wire:loading.class="opacity-50 cursor-not-allowed"
                         class="py-3 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2
                             {{ $activeNotesTab === 'my_notes' 
                                 ? 'border-indigo-500 text-indigo-600 dark:text-indigo-400' 
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}"
                     >
-                        <i class="fas fa-user"></i>
+                        <i class="fas fa-user" wire:loading.remove wire:target="switchNotesTab"></i>
+                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="switchNotesTab"></i>
                         <span>Benim Notlarım</span>
                         <span class="bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 text-xs px-2 py-1 rounded-full font-semibold">
                             {{ count($myNotes) }}
@@ -31,12 +43,15 @@
                     </button>
                     <button 
                         wire:click="switchNotesTab('team_notes')"
+                        wire:loading.attr="disabled"
+                        wire:loading.class="opacity-50 cursor-not-allowed"
                         class="py-3 px-1 border-b-2 font-medium text-sm transition-all duration-200 flex items-center space-x-2
                             {{ $activeNotesTab === 'team_notes' 
                                 ? 'border-emerald-500 text-emerald-600 dark:text-emerald-400' 
                                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300' }}"
                     >
-                        <i class="fas fa-users"></i>
+                        <i class="fas fa-users" wire:loading.remove wire:target="switchNotesTab"></i>
+                        <i class="fas fa-spinner fa-spin" wire:loading wire:target="switchNotesTab"></i>
                         <span>Ekip Notları</span>
                         <span class="bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 text-xs px-2 py-1 rounded-full font-semibold">
                             {{ count($teamNotes) }}
