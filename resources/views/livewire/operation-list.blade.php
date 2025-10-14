@@ -272,8 +272,10 @@
                                     {{ $operation->process ? ucfirst(str_replace('_', ' ', $operation->process)) : 'Belirtilmemiş' }}
                                 @endif
                             </div>
-                            <div class="text-sm text-gray-600 mt-1">{{ $operation->patient->first_name }} {{ $operation->patient->last_name }}</div>
-                            <div class="text-xs text-gray-500">TC: {{ substr($operation->patient->tc_identity, 0, 3) }}***{{ substr($operation->patient->tc_identity, -2) }}</div>
+                            <div class="text-sm text-gray-600 mt-1">{{ $operation->patient ? $operation->patient->full_name : ($operation->patient_name ?? 'Belirtilmemiş') }}</div>
+                            @if($operation->patient && $operation->patient->tc_identity)
+    <div class="text-xs text-gray-500">TC: {{ substr($operation->patient->tc_identity, 0, 3) }}***{{ substr($operation->patient->tc_identity, -2) }}</div>
+@endif
                             <div class="text-xs text-gray-500">Dönem: {{ $operation->registration_period }}</div>
                         </div>
                     </div>
@@ -348,10 +350,12 @@
                                 </div>
                             </td>
                             <td x-show="columns.patientInfo" class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900" title="{{ $operation->patient->first_name }} {{ $operation->patient->last_name }}">
-                                    {{ Str::limit($operation->patient->first_name . ' ' . $operation->patient->last_name, 25) }}
-                                </div>
-                                <div class="text-sm text-gray-500">TC: {{ substr($operation->patient->tc_identity, 0, 3) }}***{{ substr($operation->patient->tc_identity, -2) }}</div>
+                                <div class="text-sm font-medium text-gray-900" title="{{ $operation->patient ? $operation->patient->full_name : ($operation->patient_name ?? '') }}">
+    {{ $operation->patient ? Str::limit($operation->patient->full_name, 25) : ($operation->patient_name ? Str::limit($operation->patient_name, 25) : 'Belirtilmemiş') }}
+</div>
+                                @if($operation->patient && $operation->patient->tc_identity)
+    <div class="text-sm text-gray-500">TC: {{ substr($operation->patient->tc_identity, 0, 3) }}***{{ substr($operation->patient->tc_identity, -2) }}</div>
+@endif
                             </td>
                             <td x-show="columns.registrationPeriod" class="px-6 py-4 whitespace-nowrap">
                                 <div class="text-sm text-gray-900">{{ $operation->registration_period }}</div>
@@ -408,7 +412,7 @@
                                 <h3 class="text-2xl font-bold text-white">{{ $selectedOperationForNotes ? $selectedOperationForNotes->process_label : '' }} - Notlar</h3>
                                 <div class="flex items-center space-x-4 text-sm text-blue-100">
                                     <span class="flex items-center"><i class="fas fa-calendar mr-2"></i>{{ $selectedOperationForNotes ? $selectedOperationForNotes->process_date->format('d.m.Y') : '' }}</span>
-                                    <span class="flex items-center"><i class="fas fa-user mr-2"></i>{{ $selectedOperationForNotes ? $selectedOperationForNotes->patient->first_name . ' ' . $selectedOperationForNotes->patient->last_name : '' }}</span>
+                                    <span class="flex items-center"><i class="fas fa-user mr-2"></i>{{ $selectedOperationForNotes && $selectedOperationForNotes->patient ? $selectedOperationForNotes->patient->full_name : '' }}</span>
                                 </div>
                             </div>
                         </div>
@@ -674,7 +678,7 @@
                                                             class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors">
                                                         <i class="fas fa-info text-sm"></i>
                                                     </button>
-                                                    <button type="button" wire:click="$set('newOperation.patient_id', '')" 
+                                                    <button type="button" wire:click="$set('newOperation.patient_id', null)" 
                                                             class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors">
                                                         <i class="fas fa-times text-sm"></i>
                                                     </button>
@@ -697,7 +701,7 @@
                                                     </div>
                                                     <div>
                                                         <div class="font-medium text-gray-900">
-                                                            {{ $patient->first_name }} {{ $patient->last_name }}
+                                                            {{ $patient->full_name }}
                                                         </div>
                                                         <div class="text-sm text-gray-500">
                                                             TC: {{ $patient->tc_identity }}
@@ -714,6 +718,14 @@
                                 @elseif(!($newOperation['patient_id'] ?? false) && !empty($patientSearch))
                                     <div class="text-center py-4 text-gray-500">
                                         Arama kriterinize uygun hasta bulunamadı.
+                                    </div>
+                                @endif
+
+                                @if(!($newOperation['patient_id'] ?? false))
+                                    <div class="mt-3">
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">Hasta Adı Soyadı</label>
+                                        <input type="text" wire:model.live="newOperation.patient_name" placeholder="Örn: Ahmet Yılmaz" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        @error('newOperation.patient_name') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                                     </div>
                                 @endif
                                 
@@ -775,6 +787,52 @@
                                 @error('selectedOperationType') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
                             </div>
 
+                            @if(!$editingOperation)
+                            <div class="md:col-span-2 mt-2">
+                                <div class="flex items-center justify-between mb-2">
+                                    <label class="block text-sm font-medium text-gray-700">Ek Operasyonlar</label>
+                                    <button type="button" wire:click="addOperationEntry" class="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded-md">
+                                        + 1 işlem daha ekle
+                                    </button>
+                                </div>
+                                @foreach($additionalOperations as $index => $extra)
+                                    <div class="border border-gray-200 rounded-md p-3 mb-3">
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Süreci</label>
+                                                <select wire:model.live="additionalOperations.{{ $index }}.process" class="w-full px-3 py-2 border @error('additionalOperations.' . $index . '.process') border-red-500 @else border-gray-300 @enderror rounded-md focus:outline-none focus:ring-2 @error('additionalOperations.' . $index . '.process') focus:ring-red-500 @else focus:ring-blue-500 @enderror">
+                                                    <option value="">İşlem Süreci Seçin</option>
+                                                    @foreach($processOptions as $value => $label)
+                                                        <option value="{{ $value }}">{{ $label }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @error('additionalOperations.' . $index . '.process') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                            </div>
+                                            <div>
+                                                <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Tipi</label>
+                                                <select wire:model.live="additionalOperations.{{ $index }}.operation_type_id" class="w-full px-3 py-2 border @error('additionalOperations.' . $index . '.operation_type_id') border-red-500 @else border-gray-300 @enderror rounded-md focus:outline-none focus:ring-2 @error('additionalOperations.' . $index . '.operation_type_id') focus:ring-red-500 @else focus:ring-blue-500 @enderror">
+                                                    <option value="">İşlem Tipi Seçin</option>
+                                                    @php
+                                                        $types = collect($allOperationTypes ?? [])->filter(function($t) use ($extra) { return ($t->process ?? null) === ($extra['process'] ?? null); });
+                                                    @endphp
+                                                    @foreach($types as $type)
+                                                        <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @error('additionalOperations.' . $index . '.operation_type_id') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                                            </div>
+                                        </div>
+                                        <div class="mt-3 flex justify-end">
+                                            <button type="button" wire:click="removeOperationEntry({{ $index }})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md">
+                                                Kaldır
+                                            </button>
+                                        </div>
+                                    </div>
+                                @endforeach
+                                <p class="text-xs text-gray-500">Yazdığınız açıklama tüm eklediğiniz operasyonlara uygulanacaktır.</p>
+                            </div>
+                            @endif
+
                             <!-- Kayıt Dönemi -->
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Kayıt Dönemi *</label>
@@ -829,7 +887,7 @@
                     <div class="bg-gray-50 p-4 rounded-lg">
                         <h4 class="font-semibold text-gray-700 mb-3">Kişisel Bilgiler</h4>
                         <div class="space-y-2">
-                            <div><span class="font-medium">Ad Soyad:</span> {{ $selectedPatient->first_name }} {{ $selectedPatient->last_name }}</div>
+                            <div><span class="font-medium">Ad Soyad:</span> {{ $selectedPatient->full_name }}</div>
                             <div><span class="font-medium">TC Kimlik:</span> {{ $selectedPatient->tc_number }}</div>
                             <div><span class="font-medium">Doğum Tarihi:</span> {{ $selectedPatient->birth_date ? \Carbon\Carbon::parse($selectedPatient->birth_date)->format('d.m.Y') : '-' }}</div>
                             <div><span class="font-medium">Cinsiyet:</span> {{ $selectedPatient->gender == 'male' ? 'Erkek' : ($selectedPatient->gender == 'female' ? 'Kadın' : '-') }}</div>
@@ -957,6 +1015,17 @@
                             <p class="text-xs text-gray-500 mt-1">İşlem türü değeri otomatik olarak bu isimden oluşturulacaktır</p>
                         </div>
 
+                        <!-- İşlem Süreci -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">İşlem Süreci *</label>
+                            <select wire:model="operationTypeForm.process" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="">Seçiniz</option>
+                                @foreach($processOptions as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('operationTypeForm.process') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                        </div>
 
                     </div>
 

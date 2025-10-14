@@ -8,6 +8,11 @@ use App\Models\Activity;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
+// Add imports for optional operation creation
+use App\Models\Operation;
+use App\Models\OperationType;
+use App\Models\OperationDetail;
 
 class AddPatientModal extends Component
 {
@@ -45,6 +50,25 @@ class AddPatientModal extends Component
     public $physical_examination = '';
     public $planned_operation = '';
     public $chronic_conditions = '';
+
+    // Optional operation addition state
+    public $showOperationForm = false;
+    public $newOperation = [
+        'process' => '',
+        'process_detail' => '',
+        'registration_period' => ''
+    ];
+    public $operationTypes = [];
+public $operationDetails = [];
+public $selectedOperationType = null;
+public $operationTypeSearch = '';
+public $operationDetailSearch = '';
+public $processOptions = [
+    'surgery' => 'Ameliyat',
+    'mesotherapy' => 'Mezoterapi',
+    'botox' => 'Botoks',
+    'filler' => 'Dolgu',
+];
     
     protected function rules()
     {
@@ -69,6 +93,13 @@ class AddPatientModal extends Component
             'planned_operation' => 'nullable|string',
             'chronic_conditions' => 'nullable|string',
         ];
+        // Add operation rules only when operation form is enabled
+        if ($this->showOperationForm) {
+            $rules['newOperation.process'] = 'required|in:surgery,mesotherapy,botox,filler';
+            $rules['selectedOperationType'] = 'required|exists:operation_types,id';
+            $rules['newOperation.process_detail'] = 'nullable|string';
+            $rules['newOperation.registration_period'] = 'required|string';
+        }
         
         if ($this->isEditMode) {
             $rules['tc_identity'] = 'required|string|size:11|unique:patients,tc_identity,' . $this->patientId;
@@ -102,7 +133,7 @@ class AddPatientModal extends Component
         $this->showModal = true;
         $this->patientId = $patientId;
         $this->isEditMode = !is_null($patientId);
-        
+        $this->showOperationForm = false;
         if ($this->isEditMode) {
             $this->loadPatientData();
         } else {
@@ -169,7 +200,7 @@ class AddPatientModal extends Component
         $this->phone = '';
         $this->birth_date = '';
         $this->address = '';
-        $this->registration_date = now()->format('Y-m-d\TH:i');
+        $this->registration_date = now()->format('Y-m-d\\TH:i');
         $this->needs_paid = '';
         
         // Ödeme bilgilerini sıfırla
@@ -188,6 +219,18 @@ class AddPatientModal extends Component
         $this->physical_examination = '';
         $this->planned_operation = '';
         $this->chronic_conditions = '';
+        // Reset optional operation form
+        $this->showOperationForm = false;
+        $this->newOperation = [
+            'process' => '',
+            'process_detail' => '',
+            'registration_period' => ''
+        ];
+        $this->operationTypes = [];
+        $this->operationDetails = [];
+        $this->selectedOperationType = null;
+        $this->operationTypeSearch = '';
+        $this->operationDetailSearch = '';
     }
     
     public function save()
@@ -255,7 +298,7 @@ class AddPatientModal extends Component
                 // Yeni hasta ekleme - doktor ID'si ata
                 $patientData['is_active'] = true;
                 $patientData['last_visit'] = now();
-                $patientData['doctor_id'] = $user->getDoctorIdForFiltering();
+                $patientData['doctor_id'] = $this->getDoctorIdForFiltering();
                 
                 $patient = Patient::create($patientData);
                 
@@ -268,6 +311,11 @@ class AddPatientModal extends Component
                             'paid_amount' => $payment['paid_amount'],
                             'notes' => $payment['notes']
                         ]);
+                    }
+                    
+                    // Operasyon ekleme (opsiyonel)
+                    if ($this->showOperationForm) {
+                        $this->createOperationForPatient($patient, $user);
                     }
                     
                     // Aktivite kaydı oluştur
@@ -367,5 +415,125 @@ class AddPatientModal extends Component
     public function render()
     {
         return view('livewire.add-patient-modal');
+    }
+    
+    public function createOperationForPatient(\App\Models\Patient $patient, $user)
+    {
+        // Determine doctor_id
+        $doctorId = null;
+        if ($user->role === 'doctor') {
+            $doctorId = $user->id;
+        } elseif (in_array($user->role, ['nurse', 'secretary'])) {
+            $doctorId = $user->doctor_id;
+        } elseif ($user->role === 'admin') {
+            $doctorId = $patient->doctor_id;
+        }
+        // Ensure created_by always references the actual actor's user id
+        $createdBy = $user->id;
+
+        $operationData = [
+            'patient_id' => $patient->id,
+            'process' => $this->newOperation['process'],
+            'process_detail' => $this->newOperation['process_detail'],
+            'process_date' => Carbon::today(),
+            'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period']),
+            'created_by' => $createdBy,
+            'doctor_id' => $doctorId
+        ];
+        if (Schema::hasColumn('operations', 'process_type')) {
+            $operationData['process_type'] = $this->selectedOperationType;
+        }
+
+        Operation::create($operationData);
+        Activity::create([
+            'type' => 'operation_added',
+            'description' => 'Yeni operasyon eklendi: ' . $this->newOperation['process'] . ' - ' . substr($this->newOperation['process_detail'], 0, 50) . (strlen($this->newOperation['process_detail']) > 50 ? '...' : ''),
+            'patient_id' => $patient->id,
+            'doctor_id' => $doctorId
+        ]);
+    }
+    
+    public function toggleOperationForm()
+    {
+        $this->showOperationForm = !$this->showOperationForm;
+        if ($this->showOperationForm) {
+            // Initialize registration period to current month
+            $this->newOperation['registration_period'] = Carbon::now()->format('Y-m');
+            $this->loadOperationTypes();
+            if ($this->selectedOperationType) {
+                $this->updatedSelectedOperationType();
+            }
+        }
+    }
+    
+    private function convertToTurkishMonth($yearMonth)
+    {
+        $months = [
+            '01' => 'ocak', '02' => 'şubat', '03' => 'mart', '04' => 'nisan',
+            '05' => 'mayıs', '06' => 'haziran', '07' => 'temmuz', '08' => 'ağustos',
+            '09' => 'eylül', '10' => 'ekim', '11' => 'kasım', '12' => 'aralık'
+        ];
+        $parts = explode('-', $yearMonth);
+        if (count($parts) === 2) {
+            $year = $parts[0];
+            $month = $parts[1];
+            return ($months[$month] ?? $month) . ' ' . $year;
+        }
+        return $yearMonth;
+    }
+    
+    public function updatedSelectedOperationType()
+    {
+        $type = OperationType::find($this->selectedOperationType);
+        // Do not override process here; user selects process explicitly via dropdown
+        $this->loadOperationDetails($this->selectedOperationType);
+        $this->newOperation['process_detail'] = '';
+    }
+    
+    public function updatedNewOperationProcess($value)
+    {
+        $doctorId = $this->getDoctorIdForFiltering();
+        $query = OperationType::active()->ordered();
+        if ($doctorId) {
+            $query->forDoctor($doctorId);
+        }
+        if (!empty($value)) {
+            $query->where('value', $value);
+        }
+        $this->operationTypes = $query->get();
+        $this->selectedOperationType = null;
+        $this->operationDetails = [];
+        $this->operationTypeSearch = '';
+        $this->operationDetailSearch = '';
+    }
+    
+    public function loadOperationTypes()
+    {
+        $doctorId = $this->getDoctorIdForFiltering();
+        if ($doctorId) {
+            $query = OperationType::active()->forDoctor($doctorId)->ordered();
+        } else {
+            $query = OperationType::active()->ordered();
+        }
+        if (!empty($this->newOperation['process'])) {
+            $query->where('value', $this->newOperation['process']);
+        }
+        $this->operationTypes = $query->get();
+    }
+    
+    public function loadOperationDetails($operationTypeId = null)
+    {
+        if ($operationTypeId) {
+            $query = OperationDetail::active()->byType($operationTypeId)->ordered();
+            if (!empty($this->operationDetailSearch)) {
+                $query->where(function($q) {
+                    $q->where('name', 'like', '%' . $this->operationDetailSearch . '%')
+                      ->orWhere('description', 'like', '%' . $this->operationDetailSearch . '%');
+                });
+            }
+            $this->operationDetails = $query->get();
+        } else {
+            $this->operationDetails = [];
+        }
     }
 }

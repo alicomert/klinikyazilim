@@ -10,6 +10,7 @@ class Operation extends Model
 {
     protected $fillable = [
         'patient_id',
+        'patient_name',
         'doctor_id',
         'process',
         'process_type',

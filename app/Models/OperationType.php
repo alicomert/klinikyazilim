@@ -10,6 +10,9 @@ class OperationType extends Model
 {
     protected $fillable = [
         'name',
+        'process',
+        'value',
+        'description',
         'is_active',
         'sort_order',
         'created_by'

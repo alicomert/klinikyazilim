@@ -341,6 +341,91 @@
                     </div>
                 </div>
                 
+                <!-- Optional Operation Addition -->
+                <div class="bg-white rounded-lg p-6 shadow-sm mt-6">
+                    <div class="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
+                        <h4 class="text-lg font-semibold text-gray-800 flex items-center">
+                            <i class="fas fa-procedures text-purple-600 mr-3"></i>
+                            Operasyon Ekle (Opsiyonel)
+                        </h4>
+                        <button type="button"
+                                wire:click="toggleOperationForm"
+                                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center
+                                       {{ $showOperationForm ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
+                            <i class="fas {{ $showOperationForm ? 'fa-minus' : 'fa-plus' }} mr-2"></i>
+                            {{ $showOperationForm ? 'Kapat' : 'Operasyon Ekle' }}
+                        </button>
+                    </div>
+                    
+                    @if($showOperationForm)
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <!-- İşlem Tipi -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">İşlem Tipi *</label>
+                            <select wire:model="selectedOperationType" 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent @error('selectedOperationType') border-red-500 @enderror">
+                                <option value="">Seçiniz</option>
+                                @foreach($operationTypes as $type)
+                                    <option value="{{ $type->id }}">{{ $type->name }}</option>
+                                @endforeach
+                            </select>
+                            @error('selectedOperationType') 
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                            @enderror
+                        </div>
+                        
+                        <!-- İşlem Süreci -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">İşlem Süreci *</label>
+                            <select 
+                                wire:model="newOperation.process"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent @error('newOperation.process') border-red-500 @enderror">
+                                <option value="">Seçiniz</option>
+                                @foreach($processOptions as $value => $label)
+                                    <option value="{{ $value }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                            @error('newOperation.process') 
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                            @enderror
+                        </div>
+                        
+                        <!-- İşlem Detayı -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">İşlem Detayı</label>
+                            @if(count($operationDetails) > 0)
+                                <select wire:model="newOperation.process_detail" 
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                                    <option value="">Seçiniz</option>
+                                    @foreach($operationDetails as $detail)
+                                        <option value="{{ $detail->name }}">{{ $detail->name }}</option>
+                                    @endforeach
+                                    <option value="">Diğer (manuel giriş)</option>
+                                </select>
+                            @endif
+                            <input type="text"
+                                   wire:model="newOperation.process_detail"
+                                   class="mt-2 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                                   placeholder="Detay veya açıklama">
+                            @error('newOperation.process_detail') 
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                            @enderror
+                        </div>
+                        
+                        <!-- Kayıt Dönemi -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Kayıt Dönemi *</label>
+                            <input type="month"
+                                   wire:model="newOperation.registration_period"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent @error('newOperation.registration_period') border-red-500 @enderror">
+                            @error('newOperation.registration_period') 
+                                <span class="text-red-500 text-xs mt-1">{{ $message }}</span> 
+                            @enderror
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                
                 <!-- Modal Footer -->
                 <div class="flex-shrink-0 bg-white border-t border-gray-200 px-6 py-4 rounded-b-xl">
                     <div class="flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
