@@ -189,16 +189,28 @@
                     </select>
                 </div>
                 
-                <!-- Add Button -->
-                <button wire:click="$set('showModal', true)" 
-                        wire:loading.attr="disabled"
-                        wire:loading.class="opacity-50 cursor-not-allowed"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center w-full sm:w-auto">
-                    <i class="fas fa-plus mr-2" wire:loading.remove wire:target="$set('showModal', true)"></i>
-                    <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="$set('showModal', true)"></i>
-                    <span wire:loading.remove wire:target="$set('showModal', true)">Yeni Operasyon</span>
-                    <span wire:loading wire:target="$set('showModal', true)">Yükleniyor...</span>
-                </button>
+                <!-- Action Buttons -->
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button wire:click="$set('showModal', true)" 
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-50 cursor-not-allowed"
+                            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center w-full sm:w-auto">
+                        <i class="fas fa-plus mr-2" wire:loading.remove wire:target="$set('showModal', true)"></i>
+                        <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="$set('showModal', true)"></i>
+                        <span wire:loading.remove wire:target="$set('showModal', true)">Yeni Operasyon</span>
+                        <span wire:loading wire:target="$set('showModal', true)">Yükleniyor...</span>
+                    </button>
+
+                    <button wire:click="openImportModal"
+                            wire:loading.attr="disabled"
+                            wire:loading.class="opacity-50 cursor-not-allowed"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center w-full sm:w-auto">
+                        <i class="fas fa-file-import mr-2" wire:loading.remove wire:target="openImportModal"></i>
+                        <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="openImportModal"></i>
+                        <span wire:loading.remove wire:target="openImportModal">Toplu İçeri Aktar</span>
+                        <span wire:loading wire:target="openImportModal">Açılıyor...</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1182,6 +1194,108 @@
             <span id="toast-message"></span>
         </div>
     </div>
+
+    <!-- Import Modal -->
+    @if($showImportModal)
+        <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50" wire:click="closeImportModal">
+            <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white" wire:click.stop>
+                <div class="mt-3">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Toplu İçeri Aktar</h3>
+                        <button wire:click="closeImportModal" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="space-y-5">
+                        <div class="bg-blue-50 border border-blue-200 rounded-md p-3">
+                            <p class="text-sm text-blue-700">
+                                Dosya formatları: Excel (xlsx, xls, csv) veya JSON (json, txt).<br>
+                                Zorunlu alan: <strong>process</strong>.<br>
+                                Hasta eşleştirme/kayıt: <strong>tc_identity</strong> veya <strong>patient_id</strong> varsa mevcut hastayla eşleştirilir; yoksa <strong>patient_name</strong> ile isimden kayıt oluşturularak işlem kaydedilir.<br>
+                                Not: <strong>tc_identity</strong> sağlanmış ama sistemde birebir eşleşme yoksa, ilgili satır için <em>“Kayıtlarınızda böyle bir hasta yok”</em> hatası gösterilir.<br>
+                                İsteğe bağlı alanlar: <strong>registration_period</strong> (YYYY-MM veya 'Ocak 2025'), <strong>operation_type_id</strong> veya <strong>operation_type_name</strong>, <strong>process_date</strong> (verilmezse otomatik olarak bugünün tarihi kaydedilir).
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 border border-gray-200 rounded-md p-3">
+                            <div class="text-sm text-gray-700">
+                                Örnek şablonlar:
+                                <a href="{{ asset('samples/operations_import_sample.csv') }}" download class="text-indigo-600 hover:text-indigo-800 font-medium ml-2">
+                                    <i class="fas fa-file-csv mr-1"></i>Örnek Excel (CSV)
+                                </a>
+                                <span class="mx-2">•</span>
+                                <a href="{{ asset('samples/operations_import_sample.json') }}" download class="text-indigo-600 hover:text-indigo-800 font-medium">
+                                    <i class="fas fa-file-code mr-1"></i>Örnek JSON
+                                </a>
+                                <div class="mt-2 text-xs text-gray-600">
+                                    Not: Örneklerdeki <strong>patient_id</strong> ve <strong>tc_identity</strong> değerleri temsildir. Kendi sisteminizde mevcut olan hastalara ait gerçek değerlerle değiştirin. <strong>TC alanını boş bırakabilirsiniz;</strong> bu durumda <strong>patient_name</strong> ile isimden kayıt yapılır. Doktor/Sekreter/Hemşire rolleri sadece bağlı olduğu doktora ait hastaları eşleştirir; bu yüzden ID/TC başka doktora aitse eşleşmez.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Excel Dosyası</label>
+                            <input type="file" wire:model="importExcelFile" accept=".xlsx,.xls,.csv" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                            @error('importExcelFile') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <div wire:loading wire:target="importExcelFile" class="text-xs text-gray-500 mt-1">Yükleniyor...</div>
+                            <div class="mt-2">
+                                <button type="button" wire:click="importExcel" wire:loading.attr="disabled" wire:target="importExcelFile,importExcel" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                                    <span wire:loading.remove wire:target="importExcel"><i class="fas fa-file-excel mr-2"></i> Excel'i İçe Aktar</span>
+                                    <span wire:loading wire:target="importExcel"><i class="fas fa-spinner fa-spin mr-2"></i> İçeri Aktarılıyor...</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">JSON Dosyası</label>
+                            <input type="file" wire:model="importJsonFile" accept=".json,.txt" class="w-full border border-gray-300 rounded-md px-3 py-2">
+                            @error('importJsonFile') <span class="text-red-500 text-sm">{{ $message }}</span> @enderror
+                            <div wire:loading wire:target="importJsonFile" class="text-xs text-gray-500 mt-1">Yükleniyor...</div>
+                            <div class="mt-2">
+                                <button type="button" wire:click="importJson" wire:loading.attr="disabled" wire:target="importJsonFile,importJson" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                                    <span wire:loading.remove wire:target="importJson"><i class="fas fa-file-code mr-2"></i> JSON'u İçe Aktar</span>
+                                    <span wire:loading wire:target="importJson"><i class="fas fa-spinner fa-spin mr-2"></i> İçeri Aktarılıyor...</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        @if(!empty($importReport['errors']))
+                            <div class="bg-red-50 border border-red-200 rounded-md p-3">
+                                <div class="font-medium text-red-700 mb-2">Hatalar</div>
+                                <ul class="list-disc ml-5 text-sm text-red-700 space-y-1">
+                                    @foreach($importReport['errors'] as $err)
+                                        <li>{{ $err }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        <div class="bg-green-50 border border-green-200 rounded-md p-3">
+                            <div class="text-sm text-green-700">
+                                Başarılı kayıt: {{ $importReport['success'] ?? 0 }}
+                            </div>
+                        </div>
+
+                        @if(!empty($importReport['saved']))
+                            <div class="bg-blue-50 border border-blue-200 rounded-md p-3 mt-3">
+                                <div class="font-medium text-blue-700 mb-2">Kaydedilen Kayıtlar</div>
+                                <ul class="list-disc ml-5 text-sm text-blue-700 space-y-1">
+                                    @foreach($importReport['saved'] as $s)
+                                        <li>{{ $s }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button type="button" wire:click="closeImportModal" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium px-4 py-2 rounded-md">Kapat</button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 
 <script>

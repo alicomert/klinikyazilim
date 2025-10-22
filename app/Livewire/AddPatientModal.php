@@ -498,7 +498,7 @@ public $processOptions = [
             $query->forDoctor($doctorId);
         }
         if (!empty($value)) {
-            $query->where('value', $value);
+            $query->where('process', $value);
         }
         $this->operationTypes = $query->get();
         $this->selectedOperationType = null;
@@ -516,7 +516,7 @@ public $processOptions = [
             $query = OperationType::active()->ordered();
         }
         if (!empty($this->newOperation['process'])) {
-            $query->where('value', $this->newOperation['process']);
+            $query->where('process', $this->newOperation['process']);
         }
         $this->operationTypes = $query->get();
     }

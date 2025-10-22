@@ -22,6 +22,7 @@ class Operation extends Model
 
     protected $casts = [
         'process_date' => 'date'
+        
     ];
 
     // İlişkiler

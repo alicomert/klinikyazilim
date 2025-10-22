@@ -11,12 +11,16 @@ use App\Models\OperationDetail;
 use Carbon\Carbon;
 use Livewire\Component;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Imports\OperationsImport;
 
 class OperationList extends Component
 {
-    use WithPagination;
+    use WithPagination, WithFileUploads;
 
     // Event listeners
     protected $listeners = ['operation-type-added' => 'refreshOperationTypes'];
@@ -82,27 +86,64 @@ class OperationList extends Component
     public $additionalOperations = [];
     public $allOperationTypes = [];
 
+    // Toplu içe aktarma için
+    public $showImportModal = false;
+    public $importExcelFile;
+    public $importJsonFile;
+    public $importReport = ['success' => 0, 'errors' => []];
+
     // Validation rules
+    // Validation rules - Workspace standartlarına uygun
     protected $rules = [
         'newOperation.patient_id' => 'nullable|exists:patients,id|required_without:newOperation.patient_name',
         'newOperation.patient_name' => 'nullable|string|max:255|required_without:newOperation.patient_id',
-        'newOperation.process' => 'required|string',
+        'newOperation.process' => 'required|string|in:surgery,mesotherapy,botox,filler',
         'selectedOperationType' => 'required|exists:operation_types,id',
-        'newOperation.process_detail' => 'nullable|string',
+        'newOperation.process_detail' => 'nullable|string|max:500',
         'newOperation.registration_period' => 'required|string',
-        'additionalOperations' => 'array',
-        'additionalOperations.*.process' => 'required|string',
-        'additionalOperations.*.operation_type_id' => 'required|exists:operation_types,id'
+        'additionalOperations' => 'array|max:5',
+        'additionalOperations.*.process' => 'required|string|in:surgery,mesotherapy,botox,filler',
+        'additionalOperations.*.operation_type_id' => 'required|exists:operation_types,id',
+        'importExcelFile' => 'nullable|file|mimes:xlsx,xls,csv|max:2048',
+        'importJsonFile' => 'nullable|file|mimes:json,txt|max:2048'
     ];
 
+    // Validation attributes - Türkçe alan adları
+    protected $validationAttributes = [
+        'newOperation.patient_id' => 'hasta',
+        'newOperation.patient_name' => 'hasta adı',
+        'newOperation.process' => 'işlem süreci',
+        'selectedOperationType' => 'işlem tipi',
+        'newOperation.process_detail' => 'işlem detayı',
+        'newOperation.registration_period' => 'kayıt dönemi',
+        'additionalOperations' => 'ek operasyonlar',
+        'importExcelFile' => 'Excel dosyası',
+        'importJsonFile' => 'JSON dosyası'
+    ];
+
+    // Custom validation messages - Türkçe mesajlar
     protected $messages = [
-        'newOperation.patient_id.exists' => 'Seçilen hasta bulunamadı.',
-        'newOperation.patient_id.required_without' => 'Hasta seçimi veya ad soyad girişi zorunludur.',
-        'newOperation.patient_name.required_without' => 'Hasta seçimi veya ad soyad girişi zorunludur.',
+        'newOperation.patient_id.exists' => 'Seçilen hasta sistemde bulunamadı.',
+        'newOperation.patient_id.required_without' => 'Hasta seçimi veya hasta adı girişi zorunludur.',
+        'newOperation.patient_name.required_without' => 'Hasta seçimi veya hasta adı girişi zorunludur.',
+        'newOperation.patient_name.max' => 'Hasta adı en fazla 255 karakter olabilir.',
         'newOperation.process.required' => 'İşlem süreci seçimi zorunludur.',
+        'newOperation.process.in' => 'Geçersiz işlem süreci seçimi.',
         'selectedOperationType.required' => 'İşlem tipi seçimi zorunludur.',
-        'selectedOperationType.exists' => 'Seçilen işlem tipi bulunamadı.',
-        'newOperation.registration_period.required' => 'Kayıt dönemi zorunludur.'
+        'selectedOperationType.exists' => 'Seçilen işlem tipi sistemde bulunamadı.',
+        'newOperation.process_detail.max' => 'İşlem detayı en fazla 500 karakter olabilir.',
+        'newOperation.registration_period.required' => 'Kayıt dönemi seçimi zorunludur.',
+        'additionalOperations.max' => 'En fazla 5 ek operasyon ekleyebilirsiniz.',
+        'additionalOperations.*.process.required' => 'Ek operasyon süreci seçimi zorunludur.',
+        'additionalOperations.*.process.in' => 'Geçersiz ek operasyon süreci.',
+        'additionalOperations.*.operation_type_id.required' => 'Ek operasyon tipi seçimi zorunludur.',
+        'additionalOperations.*.operation_type_id.exists' => 'Seçilen ek operasyon tipi bulunamadı.',
+        'importExcelFile.file' => 'Geçersiz dosya seçimi.',
+        'importExcelFile.mimes' => 'Sadece Excel dosyaları kabul edilir (xlsx, xls, csv).',
+        'importExcelFile.max' => 'Dosya boyutu en fazla 2MB olabilir.',
+        'importJsonFile.file' => 'Geçersiz dosya seçimi.',
+        'importJsonFile.mimes' => 'Sadece JSON dosyaları kabul edilir (json, txt).',
+        'importJsonFile.max' => 'Dosya boyutu en fazla 2MB olabilir.'
     ];
 
     // Mount methodu dinamik dropdown için güncellendi
@@ -443,21 +484,24 @@ class OperationList extends Component
 
     public function create()
     {
-        $this->validate();
+        // Yetki kontrolü
+        if (!$this->canCreate()) {
+            session()->flash('error', 'Operasyon ekleme yetkiniz yok.');
+            return;
+        }
+
         try {
+            $this->validate();
+            
             $user = Auth::user();
             $patientId = ($this->newOperation['patient_id'] ?? null) ?: null;
             $patientName = trim($this->newOperation['patient_name'] ?? '');
             $patient = $patientId ? Patient::find($patientId) : null;
-            $doctorId = null;
-            if ($user->role === 'doctor') {
-                $doctorId = $user->id;
-            } elseif (in_array($user->role, ['nurse', 'secretary'])) {
-                $doctorId = $user->doctor_id;
-            } elseif ($user->role === 'admin') {
-                $doctorId = $patient ? $patient->doctor_id : null;
-            }
-    
+            
+            // Doktor ID belirleme
+            $doctorId = $this->getDoctorId($user, $patient);
+            
+            // Ana operasyon verisi
             $operationData = [
                 'patient_id' => $patientId,
                 'process' => $this->newOperation['process'],
@@ -467,46 +511,35 @@ class OperationList extends Component
                 'created_by' => Auth::id(),
                 'doctor_id' => $doctorId
             ];
+            
+            // Dinamik sütun kontrolü
             if (Schema::hasColumn('operations', 'process_type')) {
                 $operationData['process_type'] = $this->selectedOperationType;
             }
             if (Schema::hasColumn('operations', 'patient_name')) {
                 $operationData['patient_name'] = $patientName ?: null;
             }
+            
+            // Ana operasyonu oluştur
             $operation = Operation::create($operationData);
-            Activity::create([
-                'type' => 'operation_added',
-                'description' => 'Operasyon eklendi: ' . $this->newOperation['process'],
-                'patient_id' => $patientId,
-                'doctor_id' => $doctorId
-            ]);
-    
-            // Ek operasyonlar
-            foreach ($this->additionalOperations as $extra) {
-                if (!empty($extra['process']) && !empty($extra['operation_type_id'])) {
-                    $extraData = $operationData;
-                    $extraData['process'] = $extra['process'];
-                    if (Schema::hasColumn('operations', 'process_type')) {
-                        $extraData['process_type'] = $extra['operation_type_id'];
-                    }
-                    if (Schema::hasColumn('operations', 'patient_name')) {
-                        $extraData['patient_name'] = $patientName ?: null;
-                    }
-                    Operation::create($extraData);
-                    Activity::create([
-                        'type' => 'operation_added',
-                        'description' => 'Operasyon eklendi: ' . $extra['process'],
-                        'patient_id' => $patientId,
-                        'doctor_id' => $doctorId
-                    ]);
-                }
-            }
-    
+            
+            // Aktivite kaydı
+            $this->createActivity('operation_added', 'Operasyon eklendi: ' . $this->newOperation['process'], $patientId, $doctorId);
+            
+            // Ek operasyonları işle
+            $this->processAdditionalOperations($operationData, $patientName, $patientId, $doctorId);
+            
+            // Form temizle ve listeyi yenile
             $this->resetForm();
             $this->loadOperations();
-            session()->flash('message', 'Operasyon(lar) başarıyla eklendi.');
             $this->showModal = false;
-        } catch (\Throwable $e) {
+            
+            session()->flash('message', 'Operasyon(lar) başarıyla eklendi.');
+            
+        } catch (ValidationException $e) {
+            // Validation hataları otomatik olarak gösterilir
+            throw $e;
+        } catch (\Exception $e) {
             session()->flash('error', 'Operasyon kaydedilirken bir hata oluştu: ' . $e->getMessage());
         }
     }
@@ -545,11 +578,21 @@ class OperationList extends Component
 
     public function update()
     {
-        $this->validate();
         try {
+            $this->validate();
+            
             $operation = Operation::findOrFail($this->editingOperation);
+            
+            // Yetki kontrolü
+            if (!$this->canEdit($operation)) {
+                session()->flash('error', 'Bu operasyonu düzenleme yetkiniz yok.');
+                return;
+            }
+            
             $patientId = ($this->newOperation['patient_id'] ?? null) ?: null;
             $patientName = trim($this->newOperation['patient_name'] ?? '');
+            
+            // Güncelleme verisi
             $data = [
                 'patient_id' => $patientId,
                 'process' => $this->newOperation['process'],
@@ -557,52 +600,68 @@ class OperationList extends Component
                 'process_date' => Carbon::today(),
                 'registration_period' => $this->convertToTurkishMonth($this->newOperation['registration_period']),
             ];
+            
+            // Dinamik sütun kontrolü
             if (Schema::hasColumn('operations', 'process_type')) {
                 $data['process_type'] = $this->selectedOperationType;
             }
             if (Schema::hasColumn('operations', 'patient_name')) {
                 $data['patient_name'] = $patientName ?: null;
             }
+            
+            // Operasyonu güncelle
             $operation->update($data);
-            Activity::create([
-                'type' => 'operation_updated',
-                'description' => 'Operasyon güncellendi: ' . $this->newOperation['process'],
-                'patient_id' => $patientId,
-                'doctor_id' => $operation->doctor_id
-            ]);
+            
+            // Aktivite kaydı
+            $this->createActivity('operation_updated', 'Operasyon güncellendi: ' . $this->newOperation['process'], $patientId, $operation->doctor_id);
+            
+            // Form temizle ve listeyi yenile
             $this->resetEditForm();
-            // Refresh operations list immediately after update
             $this->loadOperations();
+            
             session()->flash('message', 'Operasyon başarıyla güncellendi.');
-        } catch (\Throwable $e) {
+            
+        } catch (ValidationException $e) {
+            // Validation hataları otomatik olarak gösterilir
+            throw $e;
+        } catch (\Exception $e) {
             session()->flash('error', 'Operasyon güncellenirken bir hata oluştu: ' . $e->getMessage());
         }
     }
 
     public function delete($operationId)
     {
-        $operation = Operation::findOrFail($operationId);
+        try {
+            $operation = Operation::findOrFail($operationId);
 
-        if (!$this->canDelete($operation)) {
-            session()->flash('error', 'Bu operasyonu silme yetkiniz yok.');
-            return;
+            // Yetki kontrolü
+            if (!$this->canDelete($operation)) {
+                session()->flash('error', 'Bu operasyonu silme yetkiniz yok.');
+                return;
+            }
+
+            // Silme öncesi aktivite kaydı
+            $description = 'Operasyon silindi: ' . $operation->process;
+            if ($operation->process_detail) {
+                $description .= ' - ' . substr($operation->process_detail, 0, 50);
+                if (strlen($operation->process_detail) > 50) {
+                    $description .= '...';
+                }
+            }
+            
+            $this->createActivity('operation_deleted', $description, $operation->patient_id, $operation->doctor_id);
+
+            // Operasyonu sil
+            $operation->delete();
+            
+            // Listeyi yenile
+            $this->loadOperations();
+
+            session()->flash('message', 'Operasyon başarıyla silindi.');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Operasyon silinirken bir hata oluştu: ' . $e->getMessage());
         }
-
-        // Activities tablosuna kayıt ekle (silmeden önce)
-        $user = auth()->user();
-        $doctorId = $user->role === 'doctor' ? $user->id : ($user->role === 'secretary' ? $user->doctor_id : null);
-        
-        Activity::create([
-            'type' => 'operation_deleted',
-            'description' => 'Operasyon silindi: ' . $operation->process . ' - ' . substr($operation->process_detail, 0, 50) . (strlen($operation->process_detail) > 50 ? '...' : ''),
-            'patient_id' => $operation->patient_id,
-            'doctor_id' => $doctorId
-        ]);
-
-        $operation->delete();
-        $this->loadOperations();
-
-        session()->flash('message', 'Operasyon başarıyla silindi.');
     }
 
 
@@ -655,7 +714,11 @@ class OperationList extends Component
         $this->loadOperations();
     }
 
-    // Yetki kontrol methodları
+    // Rol Tabanlı Yetkilendirme Sistemi - Workspace Standards
+    
+    /**
+     * Operasyon düzenleme yetkisi kontrolü
+     */
     public function canEdit($operation)
     {
         $user = auth()->user();
@@ -675,21 +738,83 @@ class OperationList extends Component
             return $operation->doctor_id === $user->doctor_id;
         }
 
-        // Diğer durumlar için sadece kendi oluşturduğu kayıtları düzenleyebilir
-        // created_by kontrolü: doctor ise kendi id'si, nurse/secretary ise doctor_id'si ile karşılaştır
-        $expectedCreatedBy = $user->role === 'doctor' ? $user->id : $user->doctor_id;
-        return $operation->created_by === $expectedCreatedBy;
+        return false;
     }
 
+    /**
+     * Operasyon silme yetkisi kontrolü
+     */
     public function canDelete($operation)
+    {
+        $user = auth()->user();
+
+        // Admin her şeyi silebilir
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        // Doktor sadece kendi işlemlerini silebilir
+        if ($user->role === 'doctor') {
+            return $operation->doctor_id === $user->id;
+        }
+
+        // Hemşire ve sekreter aynı doktora bağlı işlemleri silebilir
+        if (in_array($user->role, ['nurse', 'secretary'])) {
+            return $operation->doctor_id === $user->doctor_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Operasyon görüntüleme yetkisi kontrolü
+     */
+    public function canView($operation)
+    {
+        $user = auth()->user();
+
+        // Admin her şeyi görebilir
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        // Doktor sadece kendi işlemlerini görebilir
+        if ($user->role === 'doctor') {
+            return $operation->doctor_id === $user->id;
+        }
+
+        // Hemşire ve sekreter aynı doktora bağlı işlemleri görebilir
+        if (in_array($user->role, ['nurse', 'secretary'])) {
+            return $operation->doctor_id === $user->doctor_id;
+        }
+
+        return false;
+    }
+
+    /**
+     * Operasyon notları düzenleme yetkisi
+     */
+    public function canEditNotes($operation)
     {
         return $this->canEdit($operation);
     }
 
-    public function canCreate()
+    /**
+     * İçe aktarma yetkisi kontrolü
+     */
+    public function canImport()
     {
         $user = auth()->user();
-        return in_array($user->role, ['admin', 'doctor', 'nurse']);
+        return in_array($user->role, ['admin', 'doctor']);
+    }
+
+    /**
+     * Operasyon türü yönetimi yetkisi
+     */
+    public function canManageOperationTypes()
+    {
+        $user = auth()->user();
+        return in_array($user->role, ['admin', 'doctor']);
     }
 
     public function render()
@@ -1526,6 +1651,504 @@ class OperationList extends Component
         if (isset($this->additionalOperations[$index])) {
             unset($this->additionalOperations[$index]);
             $this->additionalOperations = array_values($this->additionalOperations);
+        }
+    }
+
+    // Import modal controls
+    public function openImportModal()
+    {
+        // Yetki kontrolü
+        if (!$this->canImport()) {
+            session()->flash('error', 'İçe aktarma yetkiniz yok.');
+            return;
+        }
+        
+        $this->showImportModal = true;
+        $this->importReport = ['success' => 0, 'errors' => []];
+    }
+
+    public function closeImportModal()
+    {
+        $this->showImportModal = false;
+        $this->resetImportForm();
+    }
+
+    public function resetImportForm()
+    {
+        $this->importExcelFile = null;
+        $this->importJsonFile = null;
+        $this->importReport = ['success' => 0, 'errors' => []];
+    }
+
+    // Helpers for import
+    private function col(array $row, array $keys)
+    {
+        foreach ($keys as $k) {
+            if (array_key_exists($k, $row) && $row[$k] !== null && $row[$k] !== '') {
+                return $row[$k];
+            }
+        }
+        return null;
+    }
+
+    private function normalizeProcess($value)
+    {
+        if (!$value) return null;
+        $v = strtolower(trim($value));
+        $map = [
+            'surgery' => ['surgery','ameliyat'],
+            'mesotherapy' => ['mesotherapy','mezoterapi'],
+            'botox' => ['botox','botoks'],
+            'filler' => ['filler','dolgu']
+        ];
+        foreach ($map as $key => $aliases) {
+            if (in_array($v, $aliases, true)) return $key;
+        }
+        return null;
+    }
+
+    private function resolvePatientFromRow(array $row)
+    {
+        $user = Auth::user();
+        $patientId = $this->col($row, ['patient_id','hasta_id']);
+        $tc = $this->col($row, ['tc_identity','patient_tc','tc','tc_kimlik']);
+
+        $query = Patient::query();
+        if ($patientId) {
+            $query->where('id', $patientId);
+        } elseif ($tc && preg_match('/^\d{11}$/', (string)$tc)) {
+            $tmp = new Patient();
+            $encryptedTc = $tmp->encryptField('tc_identity', (string)$tc);
+            $query->where('tc_identity', $encryptedTc);
+        } else {
+            return null;
+        }
+
+        // Doktor bazlı erişim
+        if ($user->role === 'doctor') {
+            $query->where('doctor_id', $user->id);
+        } elseif (in_array($user->role, ['secretary','nurse'])) {
+            if ($user->doctor_id) $query->where('doctor_id', $user->doctor_id);
+        }
+        // Admin tüm hastaları görebilir
+
+        return $query->first();
+    }
+
+    private function getPatientNameFromRow(array $row)
+    {
+        // Try direct name fields
+        $name = $this->col($row, ['patient_name','hasta_adi_soyadi','adsoyad','full_name','fullname']);
+        if ($name) return trim((string)$name);
+        $first = $this->col($row, ['first_name','adi','ad']);
+        $last = $this->col($row, ['last_name','soyadi','soyad']);
+        $combined = trim(((string)$first).' '.((string)$last));
+        if (trim($combined) !== '') return $combined;
+        // Fallback single-field name
+        $single = $this->col($row, ['hasta','name']);
+        return $single ? trim((string)$single) : null;
+    }
+
+    private function normalizeTypeName(string $name)
+    {
+        // Lowercase, trim, collapse spaces, remove punctuation for tolerant matching
+        $n = preg_replace('/\s+/u', ' ', trim(mb_strtolower($name)));
+        $n = preg_replace('/[\p{P}\p{S}]/u', '', $n);
+        return $n;
+    }
+
+    private function resolveOperationTypeFromRow(?string $process, array $row, ?\App\Models\Patient $patient = null)
+    {
+        $user = Auth::user();
+        // Determine doctor context for matching
+        $doctorId = null;
+        if ($patient && $patient->doctor_id) {
+            $doctorId = $patient->doctor_id;
+        } elseif ($user->role === 'doctor') {
+            $doctorId = $user->id;
+        } elseif (in_array($user->role, ['secretary','nurse'])) {
+            $doctorId = $user->doctor_id;
+        }
+
+        $typeId = $this->col($row, ['operation_type_id','type_id','islem_tipi_id']);
+        $typeName = $this->col($row, ['operation_type_name','type_name','islem_tipi']);
+
+        // Build base query: filter by doctor if available, and by process/value
+        $query = OperationType::active()->ordered();
+        if ($doctorId) {
+            $query->forDoctor($doctorId);
+        }
+        if ($process) {
+            $query->where(function($q) use ($process) {
+                $q->where('process', $process);
+                if (\Illuminate\Support\Facades\Schema::hasColumn('operation_types', 'value')) {
+                    $q->orWhere('value', $process);
+                }
+            });
+        }
+
+        if ($typeId) {
+            return (clone $query)->where('id', $typeId)->first();
+        }
+        if ($typeName) {
+            $trimmed = trim((string)$typeName);
+            $lowerTrim = mb_strtolower($trimmed);
+            // Exact (case-insensitive) match
+            $direct = (clone $query)->whereRaw('LOWER(TRIM(name)) = ?', [$lowerTrim])->first();
+            if ($direct) return $direct;
+            // Loose LIKE match
+            $like = (clone $query)->where('name', 'like', '%'.$trimmed.'%')->first();
+            if ($like) return $like;
+            // Fuzzy matching in memory
+            $all = (clone $query)->get();
+            $targetNorm = $this->normalizeTypeName($trimmed);
+            $best = null; $bestScore = 0;
+            foreach ($all as $t) {
+                $dbNorm = $this->normalizeTypeName($t->name);
+                similar_text($targetNorm, $dbNorm, $percent);
+                if ($percent > 92 || $dbNorm === $targetNorm) {
+                    if ($percent > $bestScore) { $bestScore = $percent; $best = $t; }
+                }
+            }
+            if ($best) return $best;
+        }
+        return null;
+    }
+
+    private function parseRegistrationPeriod($value)
+    {
+        if (!$value) {
+            return $this->convertToTurkishMonth($this->getCurrentRegistrationPeriod());
+        }
+        $val = trim((string)$value);
+
+        // YYYY-MM or Y-M style with different separators
+        if (preg_match('/^(\d{4})[-\/.](\d{1,2})$/', $val, $m)) {
+            $yearMonth = sprintf('%04d-%02d', (int)$m[1], (int)$m[2]);
+            return $this->convertToTurkishMonth($yearMonth);
+        }
+        // MM-YYYY style with different separators
+        if (preg_match('/^(\d{1,2})[-\/.](\d{4})$/', $val, $m)) {
+            $yearMonth = sprintf('%04d-%02d', (int)$m[2], (int)$m[1]);
+            return $this->convertToTurkishMonth($yearMonth);
+        }
+        // Turkish month name + year (order-insensitive, case-insensitive)
+        if (preg_match('/(ocak|şubat|subat|mart|nisan|mayıs|mayis|haziran|temmuz|ağustos|agustos|eylül|eylul|ekim|kasım|kasim|aralık|aralik)/iu', $val, $mm) && preg_match('/(\d{4})/', $val, $yy)) {
+            $months = [
+                'ocak' => '01','şubat' => '02','subat' => '02','mart' => '03','nisan' => '04',
+                'mayıs' => '05','mayis' => '05','haziran' => '06','temmuz' => '07','ağustos' => '08','agustos' => '08',
+                'eylül' => '09','eylul' => '09','ekim' => '10','kasım' => '11','kasim' => '11','aralık' => '12','aralik' => '12'
+            ];
+            $monthName = strtolower($mm[1]);
+            $year = (int)$yy[1];
+            $month = $months[$monthName] ?? null;
+            if ($month) {
+                return $this->convertToTurkishMonth(sprintf('%04d-%02d', $year, (int)$month));
+            }
+        }
+
+        // Fallback: use current period to keep import flowing
+        return $this->convertToTurkishMonth($this->getCurrentRegistrationPeriod());
+    }
+
+    private function parseProcessDate($value)
+    {
+        if (!$value) return Carbon::today();
+        try {
+            return Carbon::parse($value);
+        } catch (\Exception $e) {
+            return Carbon::today();
+        }
+    }
+
+    private function importRows(array $rows)
+    {
+        if (!$this->canCreate()) {
+            session()->flash('error', 'Toplu içe aktarma yetkiniz yok.');
+            return;
+        }
+
+        $success = 0;
+        $errors = [];
+        $savedRecords = [];
+
+        foreach ($rows as $index => $rawRow) {
+            // Ensure associative array
+            $row = is_array($rawRow) ? $rawRow : (array)$rawRow;
+
+            $processRaw = $this->col($row, ['process','islem']);
+            $process = $this->normalizeProcess($processRaw);
+            if (!$process) {
+                $errors[] = "Satır " . ($index+1) . ": Geçersiz veya eksik 'process' alanı.";
+                continue;
+            }
+
+            // Attempt to resolve patient by id or TC
+            $patient = $this->resolvePatientFromRow($row);
+            $tcRaw = $this->col($row, ['tc_identity','patient_tc','tc','tc_kimlik']);
+            $patientName = $this->getPatientNameFromRow($row);
+
+            // If TC provided but no patient found, report a clear error and skip this row
+            if ($tcRaw && !$patient) {
+                $errors[] = "Satır " . ($index+1) . ": Kayıtlarınızda böyle bir hasta yok (TC: " . $tcRaw . ").";
+                continue;
+            }
+
+            // Operation type required if column exists in operations
+            $requiresType = Schema::hasColumn('operations', 'process_type');
+            $typeNameRaw = $this->col($row, ['operation_type_name','type_name','islem_tipi']);
+            // Try resolving with patient/doctor context for better matching
+            $operationType = $this->resolveOperationTypeFromRow($process, $row, $patient);
+            // Missing type will be handled after doctor_id is determined (auto-create if needed)
+
+            $detail = $this->col($row, ['process_detail','detail','aciklama','operation_detail']);
+            $registrationPeriodRaw = $this->col($row, ['registration_period','donem']);
+            $registrationPeriod = $this->parseRegistrationPeriod($registrationPeriodRaw);
+            $processDateRaw = $this->col($row, ['process_date','tarih','date']);
+            $processDate = $this->parseProcessDate($processDateRaw);
+
+            try {
+                $operationData = [
+                    'patient_id' => $patient ? $patient->id : null,
+                    'process' => $process,
+                    'process_detail' => $detail,
+                    'registration_period' => $registrationPeriod,
+                    'process_date' => $processDate,
+                ];
+
+                // Doktor ID'si ve Created By
+                $user = Auth::user();
+                if ($patient) {
+                    if ($user->role === 'admin' && $patient->doctor_id) {
+                        $operationData['doctor_id'] = $patient->doctor_id;
+                    } elseif ($user->role === 'doctor') {
+                        $operationData['doctor_id'] = $user->id;
+                    } elseif (in_array($user->role, ['secretary','nurse']) && $user->doctor_id) {
+                        $operationData['doctor_id'] = $user->doctor_id;
+                    }
+                } else {
+                    // Name-only operation: attach current actor's doctor
+                    if ($user->role === 'doctor') {
+                        $operationData['doctor_id'] = $user->id;
+                    } elseif (in_array($user->role, ['secretary','nurse']) && $user->doctor_id) {
+                        $operationData['doctor_id'] = $user->doctor_id;
+                    } else {
+                        // Admin: leave null or set to none
+                        $operationData['doctor_id'] = $operationData['doctor_id'] ?? null;
+                    }
+                }
+                // Operations tablosunda created_by zorunlu olduğu için, mevcut kullanıcı ile set edilir
+                $operationData['created_by'] = $user->id;
+
+                if ($requiresType) {
+                    if (!$operationType && $typeNameRaw) {
+                        $createDoctorId = $operationData['doctor_id'] ?? null;
+                        if (!$createDoctorId) {
+                            if ($user->role === 'doctor') {
+                                $createDoctorId = $user->id;
+                            } elseif (in_array($user->role, ['secretary','nurse']) && $user->doctor_id) {
+                                $createDoctorId = $user->doctor_id;
+                            }
+                        }
+                        // sort_order: aynı process ve doktor için en büyük değerin +1'i
+                        $orderQuery = OperationType::query()->where('process', $process);
+                        if ($createDoctorId) { $orderQuery->where('created_by', $createDoctorId); }
+                        $nextOrder = ((int) $orderQuery->max('sort_order')) + 1;
+                        $newTypeData = [
+                            'name' => trim((string)$typeNameRaw),
+                            'process' => $process,
+                            'is_active' => true,
+                            'sort_order' => $nextOrder,
+                            'created_by' => $createDoctorId
+                        ];
+                        if (Schema::hasColumn('operation_types', 'value')) {
+                            $slug = \Illuminate\Support\Str::slug(trim((string)$typeNameRaw), '_');
+                            $baseValue = $process . '_' . $slug;
+                            $uniqueValue = $baseValue;
+                            $i = 1;
+                            while (OperationType::where('value', $uniqueValue)->exists()) {
+                                $uniqueValue = $baseValue . '_' . $i;
+                                $i++;
+                            }
+                            $newTypeData['value'] = $uniqueValue;
+                        }
+                        $operationType = OperationType::create($newTypeData);
+                    }
+
+                    if (!$operationType) {
+                        $errors[] = "Satır " . ($index+1) . ": İşlem tipi eşleştirilemedi (operation_type_id veya operation_type_name).";
+                        continue;
+                    }
+
+                    $operationData['process_type'] = $operationType->id;
+                }
+
+                // If operations table has patient_name column and we don't have a linked patient, use provided name
+                if (Schema::hasColumn('operations', 'patient_name')) {
+                    $operationData['patient_name'] = $patient ? ($patient->first_name . ' ' . $patient->last_name) : ($patientName ?: null);
+                }
+
+                // If no patient resolved and no name provided, block with a clear error
+                if (!$patient && empty($operationData['patient_name'])) {
+                    $errors[] = "Satır " . ($index+1) . ": Hasta bilgisi eksik (isim soyisim veya TC gerekli).";
+                    continue;
+                }
+
+                $operation = Operation::create($operationData);
+
+                // Aktivite kaydı
+                Activity::create([
+                    'type' => 'operation_added',
+                    'description' => 'Toplu içe aktarma ile işlem eklendi: ' . $process,
+                    'patient_id' => $patient ? $patient->id : null,
+                    'doctor_id' => $operationData['doctor_id'] ?? null
+                ]);
+
+                // Build saved record summary for reporting
+                $procLabel = $this->getProcessLabel($process);
+                $typeLabel = $operationType ? ($operationType->name ?? ('ID ' . $operationType->id)) : null;
+                $summary = 'Satır ' . ($index+1) . ': ' . $procLabel . ' - ';
+                if ($patient) {
+                    $summary .= 'Hasta #' . $patient->id;
+                } else {
+                    $summary .= 'Hasta: ' . ($operationData['patient_name'] ?? '(adı yok)');
+                }
+                $summary .= ' - Dönem ' . $registrationPeriod;
+                $summary .= ' - Tarih ' . $processDate->format('Y-m-d');
+                if ($typeLabel) $summary .= ' - Tip ' . $typeLabel;
+                $normalizedDefault = $this->convertToTurkishMonth($this->getCurrentRegistrationPeriod());
+                $periodFallbackUsed = !empty($registrationPeriodRaw) && ($registrationPeriod === $normalizedDefault) && (strtolower(trim((string)$registrationPeriodRaw)) !== $normalizedDefault);
+                if ($periodFallbackUsed) $summary .= ' (Dönem algılanamadı, otomatik belirlendi)';
+                $savedRecords[] = $summary;
+
+                $success++;
+            } catch (\Exception $e) {
+                $errors[] = "Satır " . ($index+1) . ": Kayıt sırasında hata - " . $e->getMessage();
+            }
+        }
+
+        $this->importReport = ['success' => $success, 'errors' => $errors, 'saved' => $savedRecords];
+        $this->loadOperations();
+
+        if (empty($errors)) {
+            session()->flash('message', "Toplu içe aktarma tamamlandı. Başarılı kayıt: {$success}.");
+            $this->showImportModal = false;
+            $this->resetImportForm();
+        } else {
+            session()->flash('error', 'Bazı satırlar içe aktarılırken hata oluştu. Ayrıntıları kontrol edin.');
+        }
+    }
+
+    public function importExcel()
+    {
+        // Yetki kontrolü
+        if (!$this->canImport()) {
+            session()->flash('error', 'İçe aktarma yetkiniz yok.');
+            return;
+        }
+        
+        $this->validate(['importExcelFile' => 'required|file|mimes:xlsx,xls,csv']);
+        try {
+            $import = new \App\Imports\OperationsImport();
+            Excel::import($import, $this->importExcelFile->getRealPath());
+            $rows = $import->rows ? $import->rows->toArray() : [];
+            $this->importRows($rows);
+        } catch (\Throwable $e) {
+            session()->flash('error', 'Excel içe aktarma sırasında hata: ' . $e->getMessage());
+        }
+    }
+
+    public function importJson()
+    {
+        // Yetki kontrolü
+        if (!$this->canImport()) {
+            session()->flash('error', 'İçe aktarma yetkiniz yok.');
+            return;
+        }
+        
+        $this->validate(['importJsonFile' => 'required|file|mimes:json,txt']);
+        try {
+            $content = file_get_contents($this->importJsonFile->getRealPath());
+            $data = json_decode($content, true);
+            if (json_last_error() !== JSON_ERROR_NONE) {
+                throw new \RuntimeException('JSON formatı geçersiz: ' . json_last_error_msg());
+            }
+
+            // Accept either array of rows or object with 'operations' key
+            $rows = [];
+            if (is_array($data)) {
+                $rows = isset($data['operations']) && is_array($data['operations']) ? $data['operations'] : $data;
+            }
+            if (!is_array($rows)) {
+                throw new \RuntimeException('JSON beklenen formatta değil. Bir dizi satır veya {"operations": [...]} olmalı.');
+            }
+
+            $this->importRows($rows);
+        } catch (\Throwable $e) {
+            session()->flash('error', 'JSON içe aktarma sırasında hata: ' . $e->getMessage());
+        }
+    }
+
+    // CRUD Helper Methods - Workspace Standards
+    
+    /**
+     * Yetki kontrolü - Operasyon oluşturma
+     */
+    public function canCreate()
+    {
+        $user = auth()->user();
+        return in_array($user->role, ['admin', 'doctor', 'nurse', 'secretary']);
+    }
+    
+    /**
+     * Doktor ID belirleme
+     */
+    private function getDoctorId($user, $patient = null)
+    {
+        if ($user->role === 'doctor') {
+            return $user->id;
+        } elseif (in_array($user->role, ['nurse', 'secretary'])) {
+            return $user->doctor_id;
+        } elseif ($user->role === 'admin') {
+            return $patient ? $patient->doctor_id : null;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Aktivite kaydı oluşturma
+     */
+    private function createActivity($type, $description, $patientId = null, $doctorId = null)
+    {
+        Activity::create([
+            'type' => $type,
+            'description' => $description,
+            'patient_id' => $patientId,
+            'doctor_id' => $doctorId
+        ]);
+    }
+    
+    /**
+     * Ek operasyonları işleme
+     */
+    private function processAdditionalOperations($baseOperationData, $patientName, $patientId, $doctorId)
+    {
+        foreach ($this->additionalOperations as $extra) {
+            if (!empty($extra['process']) && !empty($extra['operation_type_id'])) {
+                $extraData = $baseOperationData;
+                $extraData['process'] = $extra['process'];
+                
+                if (Schema::hasColumn('operations', 'process_type')) {
+                    $extraData['process_type'] = $extra['operation_type_id'];
+                }
+                if (Schema::hasColumn('operations', 'patient_name')) {
+                    $extraData['patient_name'] = $patientName ?: null;
+                }
+                
+                Operation::create($extraData);
+                $this->createActivity('operation_added', 'Operasyon eklendi: ' . $extra['process'], $patientId, $doctorId);
+            }
         }
     }
 }
