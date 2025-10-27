@@ -89,7 +89,8 @@
             'settings': 'Ayarlar',
             'reports': 'Raporlar',
             'doctor-panel': 'Doktor Paneli',
-            'messages': 'Hasta Mesajları'
+            'messages': 'Hasta Mesajları',
+            'whatsapp': 'Mesaj Otomasyon'
         };
         return titles[page] || 'Dashboard';
     }

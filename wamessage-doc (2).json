@@ -1,0 +1,478 @@
+{
+  "info": {
+    "_postman_id": "6d360152-844c-48a4-8940-8113935900d1",
+    "name": "NEWWAMESSAGE-API-COLLECTİON",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "LOGIN",
+      "item": [
+        {
+          "name": "LOGIN-VERIFYCODE",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"identifier\": \"+905555555555\",\n    \"password\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "api.toplusms.app/login/sms"
+            }
+          }
+        },
+        {
+          "name": "LOGIN",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"identifier\": \"+905555555555\",\n    \"verify_code\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "api.toplusms.app/login"
+            }
+          }
+        }
+      ],
+      "description": "LOGIN-VERIFYCODE ile giriş yaparak doğrulama kodu alınır ve LOGIN ile giriş yapabilirsiniz."
+    },
+    {
+      "name": "CONNECT DEVICE",
+      "item": [
+        {
+          "name": "CONNECT-CODE",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"phone\": \"+905555555555\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "api.toplusms.app/wp/login/code"
+            }
+          }
+        },
+        {
+          "name": "CHECK-DEVICE",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"reg_id\": \"423412341234\",\n    \"phone\": \"+905555555555\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "api.toplusms.app/wp/device/check"
+            }
+          }
+        },
+        {
+          "name": "DELETE-DEVICE",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "api.toplusms.app/wp/delete/:reg_id"
+            }
+          }
+        },
+        {
+          "name": "GET-DEVICES",
+          "request": {
+            "method": "GET",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"identifier\": \"+905555555555\",\n    \"reg_id\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "api.toplusms.app/wp/device"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SEND MESSAGE",
+      "item": [
+        {
+          "name": "WP-PREVIEW",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "numbers",
+                  "value": "+905555555555",
+                  "type": "text",
+                  "description": "Mesaj gönderilecek telefon numarası"
+                },
+                {
+                  "key": "message",
+                  "value": "DENEMEMESAJI",
+                  "type": "text",
+                  "description": "Gönderilecek mesaj içeriği"
+                },
+                {
+                  "key": "campaign_name",
+                  "value": "test mesajı",
+                  "type": "text",
+                  "description": "Kampanya adı"
+                },
+                {
+                  "key": "reg_id",
+                  "value": "1231231234",
+                  "type": "text",
+                  "description": "Cihaz ID"
+                },
+                {
+                  "key": "now",
+                  "value": "true",
+                  "type": "text",
+                  "description": "Hemen gönder (true/false)"
+                },
+                {
+                  "key": "send_speed",
+                  "value": "4",
+                  "type": "text",
+                  "description": "Gönderim hızı: 1-4 arası değer"
+                },
+                {
+                  "key": "send_date",
+                  "value": "",
+                  "type": "text",
+                  "description": "İleri tarihli gönderim için tarih (Boş bırakılırsa şimdi gönderilir)"
+                },
+                {
+                  "key": "bulk_wp_excel_numbers",
+                  "type": "file",
+                  "description": "Toplu mesaj için numara listesi excel dosyası",
+                  "src": []
+                },
+                {
+                  "key": "bulk_wp_file",
+                  "type": "file",
+                  "description": "Gönderilecek medya dosyası",
+                  "src": []
+                },
+                {
+                  "key": "add_cancel_link",
+                  "value": "false",
+                  "type": "text",
+                  "description": "İptal bağlantısı ekle (true/false)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "api.toplusms.app/bulk/preview/wp"
+            }
+          }
+        },
+        {
+          "name": "SEND-WP",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"id\": \"c5464210-98a6-4413-becc-22580e0bea6c\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "api.toplusms.app/bulk/wp"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "REPORTS",
+      "item": [
+        {
+          "name": "GET-REPORTS",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "api.toplusms.app/reports/multi?start_date=2020-12-30&end_date=2021-12-30&state=0&source=1&type=0&report_id=79683f9c-ef0c-4759-83ec-80539f8c85da&page=1&count=10",
+              "host": [
+                "api",
+                "toplusms",
+                "app"
+              ],
+              "path": [
+                "reports",
+                "multi"
+              ],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2020-12-30",
+                  "description": "Başlangıç tarihi"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2021-12-30",
+                  "description": "Bitiş tarihi"
+                },
+                {
+                  "key": "state",
+                  "value": "0",
+                  "description": "Durum: 0: Hepsi, 1: Başarılı, 2: Başarısız, 3: Bekliyor, 4: Durduruldu"
+                },
+                {
+                  "key": "source",
+                  "value": "1",
+                  "description": "1: WhatsApp raporları"
+                },
+                {
+                  "key": "type",
+                  "value": "0",
+                  "description": "0: Hepsi, 1: Toplu, 2: Excel, 3: Özel excel, 4: Grup, 5: Seçili gönderim"
+                },
+                {
+                  "key": "report_id",
+                  "value": "79683f9c-ef0c-4759-83ec-80539f8c85da",
+                  "description": "Rapor ID"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Sayfa numarası"
+                },
+                {
+                  "key": "count",
+                  "value": "10",
+                  "description": "Sayfa başına sonuç sayısı"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET-REPORT-DETAIL",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "api.toplusms.app/reports",
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Raporun kaçıncı sayfasını görmek istediğinizi belirtir. Örneğin, 1 yazarsanız ilk sayfa, 2 yazarsanız ikinci sayfa gelir"
+                },
+                {
+                  "key": "report_id",
+                  "value": "79683f9c-ef0c-4759-83ec-80539f8c85da",
+                  "description": "Rapor ID'si. Hangi raporun detaylarını görmek istediğinizi belirtir"
+                },
+                {
+                  "key": "Source",
+                  "value": "1",
+                  "description": " Raporun türünü belirtir. Eğer 1 ise bu, WhatsApp üzerinden alınan bir rapor olduğunu gösterir."
+                },
+                {
+                  "key": "state",
+                  "value": "1",
+                  "description": "1-Başarılı, 2-Başarısız, 3-WhatsApp Kullanılmıyor, 4-Beklemede, 5-Durduruldu"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "USER",
+      "item": [
+        {
+          "name": "USER-DETAIL",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "type": "text",
+                "description": "JWT Bearer token"
+              }
+            ],
+            "url": {
+              "raw": "api.toplusms.app/user/detail"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SUBUSER",
+      "item": [
+        {
+          "name": "GET-SUBUSERS",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "api.toplusms.app/subuser"
+            }
+          }
+        },
+        {
+          "name": "CREATE-SUBUSERS",
+          "request": {
+            "method": "POST",
+            "url": {
+              "raw": "api.toplusms.app/subuser",
+              "query": [
+                {
+                  "key": "email",
+                  "value": "test@gmail.com",
+                  "description": "Alt kullanıcının e-posta adresi"
+                },
+                {
+                  "key": "name",
+                  "value": "test",
+                  "description": "Alt kullanıcının adı"
+                },
+                {
+                  "key": "password",
+                  "value": "123456",
+                  "description": "Alt kullanıcının şifresi"
+                },
+                {
+                  "key": "phone",
+                  "value": "+905555555555",
+                  "description": "Alt kullanıcının telefon numarası"
+                },
+                {
+                  "key": "senders",
+                  "value": "[0]",
+                  "description": "Alt kullanıcının kullanabileceği gönderici numaraları (ID'leri)"
+                },
+                {
+                  "key": "sms_credit_limits",
+                  "value": "0",
+                  "description": "Alt kullanıcının SMS kredi limiti"
+                },
+                {
+                  "key": "surname",
+                  "value": "test",
+                  "description": "Alt kullanıcının soyadı"
+                },
+                {
+                  "key": "username",
+                  "value": "testuser",
+                  "description": "Alt kullanıcının kullanıcı adı"
+                },
+                {
+                  "key": "wp_credit_limit",
+                  "value": "0",
+                  "description": "Alt kullanıcının WhatsApp kredi limiti"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET-SUBUSER-BY-ID",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "api.toplusms.app/subuser/:id"
+            }
+          }
+        },
+        {
+          "name": "UPDATE-SUBUSERS",
+          "request": {
+            "method": "PUT",
+            "url": {
+              "raw": "api.toplusms.app/subuser/:id",
+              "query": [
+                {
+                  "key": "email",
+                  "value": "test@gmail.com",
+                  "description": "Alt kullanıcının e-posta adresi"
+                },
+                {
+                  "key": "name",
+                  "value": "test",
+                  "description": "Alt kullanıcının adı"
+                },
+                {
+                  "key": "password",
+                  "value": "123456",
+                  "description": "Alt kullanıcının şifresi"
+                },
+                {
+                  "key": "phone",
+                  "value": "+905555555555",
+                  "description": "Alt kullanıcının telefon numarası"
+                },
+                {
+                  "key": "senders",
+                  "value": "[0]",
+                  "description": "Alt kullanıcının kullanabileceği gönderici numaraları (ID'leri)"
+                },
+                {
+                  "key": "sms_credit_limits",
+                  "value": "0",
+                  "description": "Alt kullanıcının SMS kredi limiti"
+                },
+                {
+                  "key": "surname",
+                  "value": "test",
+                  "description": "Alt kullanıcının soyadı"
+                },
+                {
+                  "key": "username",
+                  "value": "testuser",
+                  "description": "Alt kullanıcının kullanıcı adı"
+                },
+                {
+                  "key": "wp_credit_limit",
+                  "value": "0",
+                  "description": "Alt kullanıcının WhatsApp kredi limiti"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE-SUBUSER",
+          "request": {
+            "method": "DELETE",
+            "url": {
+              "raw": "api.toplusms.app/subuser/:id"
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

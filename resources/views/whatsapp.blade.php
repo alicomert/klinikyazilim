@@ -1,9 +1,7 @@
 @extends('layouts.app')
 
-@section('title', 'WhatsApp Otomasyon')
+@section('title', 'Mesaj Otomasyon')
 
 @section('content')
-<div class="pt-28">
-    @livewire('whats-app.dashboard')
-</div>
+    @livewire('message-automation')
 @endsection
