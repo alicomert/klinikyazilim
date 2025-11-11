@@ -18,7 +18,8 @@ class PatientList extends Component
     public $search = '';
     public $statusFilter = 'all';
     public $procedureFilter = 'all';
-    public $perPage = 10;
+    // Varsayılan sayfa başına kayıt sayısı
+    public $perPage = 25;
     public $showDetailsModal = false;
     public $selectedPatient = null;
     public $showNotesModal = false;
@@ -121,6 +122,12 @@ class PatientList extends Component
 
     public function updatingProcedureFilter()
     {
+        $this->resetPage();
+    }
+
+    public function updatingPerPage()
+    {
+        // Sayfa başına öğe sayısı değiştiğinde ilk sayfaya dön
         $this->resetPage();
     }
 

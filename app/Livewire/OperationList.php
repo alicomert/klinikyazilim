@@ -26,7 +26,9 @@ class OperationList extends Component
     protected $listeners = ['operation-type-added' => 'refreshOperationTypes'];
 
     // Public properties
-    public $operations = [];
+    // Not: Sayfalanmış operasyonlar artık public property olarak tutulmuyor.
+    // render() içinde görünüme doğrudan aktarılıyor. Bu nedenle $operations
+    // property’sini kaldırıyoruz (Livewire, paginator nesnelerini serialize edemez).
     public $patients = [];
     public $newOperation = [];
     public $editingOperation = null;
@@ -91,6 +93,10 @@ class OperationList extends Component
     public $importExcelFile;
     public $importJsonFile;
     public $importReport = ['success' => 0, 'errors' => []];
+
+    // Pagination
+    protected $paginationTheme = 'tailwind';
+    public $perPage = 25; // varsayılan sayfa başına kayıt
 
     // Validation rules
     // Validation rules - Workspace standartlarına uygun
@@ -457,9 +463,9 @@ class OperationList extends Component
         }
         // Admin tüm operasyonları görebilir (ek filtre yok)
 
-        $this->operations = $query->orderBy('created_at', 'desc')
-                                 ->orderBy('process_date', 'desc')
-                                 ->get();
+        return $query->orderBy('created_at', 'desc')
+                     ->orderBy('process_date', 'desc')
+                     ->paginate($this->perPage);
     }
 
     public function loadPatients()
@@ -699,19 +705,34 @@ class OperationList extends Component
 
     public function updatedSearchTerm()
     {
-        $this->loadOperations();
+        $this->resetPage();
     }
 
 
 
     public function updatedFilterProcess()
     {
-        $this->loadOperations();
+        $this->resetPage();
     }
 
     public function updatedFilterRegistrationPeriod()
     {
-        $this->loadOperations();
+        $this->resetPage();
+    }
+
+    public function updatingPerPage()
+    {
+        $this->resetPage();
+    }
+
+    /**
+     * Global görünüm: Tıklayınca görünen kayıt sayısını artır.
+     * Varsayılan olarak 25'er artırır.
+     */
+    public function showMore()
+    {
+        $step = 25;
+        $this->perPage = $this->perPage + $step;
     }
 
     // Rol Tabanlı Yetkilendirme Sistemi - Workspace Standards
@@ -819,7 +840,11 @@ class OperationList extends Component
 
     public function render()
     {
-        return view('livewire.operation-list');
+        // Sayfalanmış operasyonları sadece görünüme aktar (public property olarak saklama)
+        $operations = $this->loadOperations();
+        return view('livewire.operation-list', [
+            'operations' => $operations,
+        ]);
     }
 
     // Notes Methods
@@ -1188,7 +1213,6 @@ class OperationList extends Component
     // Dinamik dropdown methodları
     public function mount()
     {
-        $this->loadOperations();
         $this->loadPatients();
         $this->loadOperationTypes();
         $this->resetForm();

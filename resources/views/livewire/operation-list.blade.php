@@ -187,6 +187,11 @@
                             <option value="{{ $period }}">{{ $period }}</option>
                         @endforeach
                     </select>
+                    <!-- Sayfa başına kayıt sayısı -->
+                    <select wire:model.live="perPage" class="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+                        <option value="25">25 / sayfa</option>
+                        <option value="50">50 / sayfa</option>
+                    </select>
                 </div>
                 
                 <!-- Action Buttons -->
@@ -209,6 +214,14 @@
                         <i class="fas fa-spinner fa-spin mr-2" wire:loading wire:target="openImportModal"></i>
                         <span wire:loading.remove wire:target="openImportModal">Toplu İçeri Aktar</span>
                         <span wire:loading wire:target="openImportModal">Açılıyor...</span>
+                    </button>
+
+                    <!-- Bulk Patient & Operation Entry Button -->
+                    <button x-data 
+                            @click="$dispatch('open-bulk-entry')"
+                            class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center w-full sm:w-auto">
+                        <i class="fas fa-table mr-2"></i>
+                        Toplu Hasta & İşlem Ekle
                     </button>
                 </div>
             </div>
@@ -408,6 +421,50 @@
             </table>
         </div>
     </div>
+
+    <!-- Pagination -->
+    @if($operations->hasPages())
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+            <!-- Mobile Previous / Next -->
+            <div class="flex-1 flex justify-between sm:hidden">
+                @if($operations->onFirstPage())
+                    <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">Önceki</span>
+                @else
+                    <a href="{{ $operations->previousPageUrl() }}" class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Önceki</a>
+                @endif
+
+                @if($operations->hasMorePages())
+                    <a href="{{ $operations->nextPageUrl() }}" class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Sonraki</a>
+                @else
+                    <span class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-400 bg-gray-100 cursor-not-allowed">Sonraki</span>
+                @endif
+            </div>
+
+            <!-- Desktop Pagination & Info -->
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div class="space-y-1">
+                    <p class="text-sm text-gray-700">
+                        <span class="font-medium">{{ $operations->firstItem() }}</span> - <span class="font-medium">{{ $operations->lastItem() }}</span> arası, toplam <span class="font-medium">{{ $operations->total() }}</span> işlem
+                    </p>
+                    <p class="text-xs text-gray-500">Sayfa <span class="font-semibold">{{ $operations->currentPage() }}</span> / <span class="font-semibold">{{ $operations->lastPage() }}</span></p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Show More (Global görünüm: tıklayınca görünen kayıt sayısı artar) -->
+                    @if($operations->lastItem() && $operations->lastItem() < $operations->total())
+                        <button wire:click="showMore" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                            <i class="fas fa-plus mr-2"></i>
+                            Daha Fazla Göster
+                        </button>
+                    @endif
+
+                    {{ $operations->links() }}
+                </div>
+            </div>
+        </div>
+    @endif
+
+    <!-- Bulk Entry Modal Component -->
+    @livewire('bulk-patient-operation-entry')
 
     <!-- Notes Modal -->
     @if($showNotesModal)
